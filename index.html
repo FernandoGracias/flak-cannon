@@ -393,9 +393,12 @@ function update(time){
       const shellPos=s.mesh.position.clone();
       createFlakBurst(shellPos);
       // Hit detection (Fix #3)
+      let hitLog=[];
       for(let j=planes.length-1;j>=0;j--){
         const p=planes[j];
-        if(p.mesh.position.distanceTo(shellPos)<HIT_RADIUS){
+        const dist=p.mesh.position.distanceTo(shellPos);
+        hitLog.push({dist:Math.round(dist),py:Math.round(p.mesh.position.y),sy:Math.round(shellPos.y)});
+        if(dist<HIT_RADIUS){
           p.hp--;
           if(p.hp<=0){
             score++;
@@ -405,6 +408,8 @@ function update(time){
           }
         }
       }
+      window._lastHitLog=hitLog;
+      window._lastShellPos={x:Math.round(shellPos.x),y:Math.round(shellPos.y),z:Math.round(shellPos.z),fuse:Math.round(s.fuseDist),traveled:Math.round(s.traveled)};
       scene.remove(s.mesh);shells.splice(i,1);
     }
   }
