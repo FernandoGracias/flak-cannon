@@ -454,6 +454,20 @@ window._startGame=startGame;
 window._debug=()=>({planes:planes.length,shells:shells.length,score,aimPitch,aimYaw,
   planePositions:planes.slice(0,3).map(p=>({x:Math.round(p.mesh.position.x),y:Math.round(p.mesh.position.y),z:Math.round(p.mesh.position.z)}))
 });
+// Test function: aim at nearest plane and fire
+window._aimAndFire=()=>{
+  if(!planes.length)return 'no planes';
+  let nearest=planes[0],nd=Infinity;
+  planes.forEach(p=>{const d=p.mesh.position.length();if(d<nd){nd=d;nearest=p;}});
+  const pp=nearest.mesh.position;
+  const dir=pp.clone().sub(camera.position).normalize();
+  aimYaw=-Math.atan2(-dir.x,-dir.z);
+  aimPitch=Math.asin(dir.y/dir.length());
+  aimPitch=Math.max(.05,Math.min(1.4,aimPitch));
+  // Fire
+  setTimeout(()=>document.dispatchEvent(new MouseEvent('mousedown',{button:0,bubbles:true})),100);
+  return 'aimed at plane at '+JSON.stringify({x:Math.round(pp.x),y:Math.round(pp.y),z:Math.round(pp.z),dist:Math.round(nd)});
+};
 
 document.getElementById('start-screen').addEventListener('click',()=>{
   initAudio();
