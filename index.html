@@ -11,6 +11,7 @@ canvas{display:block}
 #hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;padding:20px;box-sizing:border-box}
 #hud *{color:#fff;text-shadow:0 0 6px rgba(0,0,0,.8)}
 #score{font-size:28px;font-weight:bold}
+#wave-info{font-size:18px;margin-top:8px;opacity:0;transition:opacity 0.5s}
 #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10}
 #crosshair div{position:absolute;background:rgba(255,255,255,.8)}
 #ch-t{width:2px;height:20px;left:-1px;top:-30px}
@@ -33,6 +34,7 @@ canvas{display:block}
 </div>
 <div id="hud">
   <div id="score">Score: 0</div>
+  <div id="wave-info"></div>
 </div>
 <div id="crosshair"><div id="ch-t"></div><div id="ch-b"></div><div id="ch-l"></div><div id="ch-r"></div><div id="ch-dot"></div><div id="ch-ring"></div></div>
 
@@ -50,12 +52,10 @@ function initAudio(){if(!actx)actx=new AudioCtx()}
 function playCannonFire(){
   if(!actx)return;
   const t=actx.currentTime;
-  // Deep boom with sub-bass
   const osc=actx.createOscillator(),g=actx.createGain();
   osc.type='sine';osc.frequency.setValueAtTime(60,t);osc.frequency.exponentialRampToValueAtTime(20,t+0.4);
   g.gain.setValueAtTime(0.6,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
   osc.connect(g);g.connect(actx.destination);osc.start(t);osc.stop(t+0.4);
-  // Noise burst for the crack
   const buf=actx.createBuffer(1,actx.sampleRate*0.15,actx.sampleRate),d=buf.getChannelData(0);
   for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
   const src=actx.createBufferSource(),gn=actx.createGain();
@@ -66,13 +66,11 @@ function playCannonFire(){
 function playShellExplode(){
   if(!actx)return;
   const t=actx.currentTime;
-  // Sharp crack
   const buf=actx.createBuffer(1,actx.sampleRate*0.08,actx.sampleRate),d=buf.getChannelData(0);
   for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,5);
   const src=actx.createBufferSource(),g=actx.createGain();
   src.buffer=buf;g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
   src.connect(g);g.connect(actx.destination);src.start(t);
-  // Echo/reverb tail
   const buf2=actx.createBuffer(1,actx.sampleRate*0.6,actx.sampleRate),d2=buf2.getChannelData(0);
   for(let i=0;i<d2.length;i++)d2[i]=(Math.random()*2-1)*0.15*Math.pow(1-i/d2.length,2);
   const src2=actx.createBufferSource(),g2=actx.createGain();
@@ -83,17 +81,25 @@ function playShellExplode(){
 function playPlaneExplode(){
   if(!actx)return;
   const t=actx.currentTime;
-  // Big explosion noise
   const buf=actx.createBuffer(1,actx.sampleRate*0.8,actx.sampleRate),d=buf.getChannelData(0);
   for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.2);
   const src=actx.createBufferSource(),g=actx.createGain();
   src.buffer=buf;g.gain.setValueAtTime(0.7,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.8);
   src.connect(g);g.connect(actx.destination);src.start(t);
-  // Low rumble
   const osc=actx.createOscillator(),go=actx.createGain();
   osc.type='sine';osc.frequency.setValueAtTime(40,t);osc.frequency.exponentialRampToValueAtTime(15,t+0.6);
   go.gain.setValueAtTime(0.5,t);go.gain.exponentialRampToValueAtTime(0.001,t+0.6);
   osc.connect(go);go.connect(actx.destination);osc.start(t);osc.stop(t+0.6);
+}
+
+function playSplash(){
+  if(!actx)return;
+  const t=actx.currentTime;
+  const buf=actx.createBuffer(1,actx.sampleRate*0.5,actx.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3*Math.pow(1-i/d.length,1.5);
+  const src=actx.createBufferSource(),g=actx.createGain();
+  src.buffer=buf;g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+  src.connect(g);g.connect(actx.destination);src.start(t);
 }
 
 // ---- Engine ----
@@ -131,14 +137,17 @@ function createSky(){
 }
 createSky();
 
+// ---- Ocean ----
+const oceanGeo=new THREE.PlaneGeometry(2000,2000,40,40);
+const oceanMat=new THREE.MeshLambertMaterial({color:0x0a2a3a});
+const ocean=new THREE.Mesh(oceanGeo,oceanMat);
+ocean.rotation.x=-Math.PI/2;ocean.position.y=-0.5;scene.add(ocean);
+
 // ---- Lighting ----
 scene.add(new THREE.AmbientLight(0xffa070,.6));
 const dirLight=new THREE.DirectionalLight(0xffe0b0,1.2);
 dirLight.position.set(-50,80,-30);scene.add(dirLight);
 scene.add(new THREE.HemisphereLight(0x8888cc,0x443322,.4));
-
-// ---- Ground ----
-{const gm=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.MeshLambertMaterial({color:0x1a2a1a}));gm.rotation.x=-Math.PI/2;scene.add(gm);}
 
 // ---- Clouds ----
 const clouds=[];
@@ -154,118 +163,159 @@ function makeCloud(x,y,z){
 }
 for(let i=0;i<25;i++)makeCloud(Math.random()*1600-800,60+Math.random()*120,Math.random()*1600-800);
 
-// ---- QUAD 40mm BOFORS MOUNT ----
+// ---- QUAD 40mm BOFORS MOUNT (bigger, more prominent) ----
 const cannonGroup=new THREE.Group();
 const cannonPivot=new THREE.Group();
 
 // Base platform - heavy circular base
 const baseMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const base=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.8,1.4,12),baseMat);
-base.position.y=0.7;cannonGroup.add(base);
+const base=new THREE.Mesh(new THREE.CylinderGeometry(4,4.8,1.8,12),baseMat);
+base.position.y=0.9;cannonGroup.add(base);
 
 // Turret ring
 const ringMat=new THREE.MeshLambertMaterial({color:0x4a4a4a});
-const ring=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.8,0.6,16),ringMat);
-ring.position.y=1.6;cannonGroup.add(ring);
+const ring=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.5,0.8,16),ringMat);
+ring.position.y=2;cannonGroup.add(ring);
 
-// Main turret housing - beefy box
+// Main turret housing
 const mountMat=new THREE.MeshLambertMaterial({color:0x505050});
-const mount=new THREE.Mesh(new THREE.BoxGeometry(3.5,2,3),mountMat);
+const mount=new THREE.Mesh(new THREE.BoxGeometry(5,2.8,4),mountMat);
 mount.position.set(0,0.2,0);cannonPivot.add(mount);
 
-// Armored shield - front plate (angled)
+// Armored shield - front plate
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
-const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(4,2.8,0.2),shieldMat);
-shieldFront.position.set(0,0.3,-1.6);cannonPivot.add(shieldFront);
+const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(5.5,3.8,0.25),shieldMat);
+shieldFront.position.set(0,0.4,-2.2);cannonPivot.add(shieldFront);
 
 // Shield side plates
-const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.2,2.8,3.4),shieldMat);
-shieldL.position.set(-2,0.3,0);cannonPivot.add(shieldL);
-const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.2,2.8,3.4),shieldMat);
-shieldR.position.set(2,0.3,0);cannonPivot.add(shieldR);
+const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.25,3.8,4.5),shieldMat);
+shieldL.position.set(-2.75,0.4,0);cannonPivot.add(shieldL);
+const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.25,3.8,4.5),shieldMat);
+shieldR.position.set(2.75,0.4,0);cannonPivot.add(shieldR);
 
 // Shield top plate
-const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(4,0.15,3.4),shieldMat);
-shieldTop.position.set(0,1.7,0);cannonPivot.add(shieldTop);
+const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(5.5,0.2,4.5),shieldMat);
+shieldTop.position.set(0,2.3,0);cannonPivot.add(shieldTop);
 
-// Four barrels in 2x2 grid: [TL, TR, BL, BR]
+// Four barrels in 2x2 grid with WIDE separation
 const barrelMat=new THREE.MeshLambertMaterial({color:0x606060});
 const barrelPositions=[
-  {x:-0.55,y:0.8},  // top-left
-  {x:0.55,y:0.8},   // top-right
-  {x:-0.55,y:-0.1},  // bottom-left
-  {x:0.55,y:-0.1},   // bottom-right
+  {x:-0.8,y:1.1},   // top-left
+  {x:0.8,y:1.1},    // top-right
+  {x:-0.8,y:-0.2},  // bottom-left
+  {x:0.8,y:-0.2},   // bottom-right
 ];
 const barrels=[];
 const barrelFlashes=[];
-const barrelRestZ=-3.5; // barrel tip resting Z position
+const barrelRestZ=-2.2;
 
 for(let i=0;i<4;i++){
   const bp=barrelPositions[i];
   const bGroup=new THREE.Group();
 
-  // Main barrel tube
-  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.18,5.5,8),barrelMat);
-  tube.rotation.x=Math.PI/2;tube.position.set(0,0,-2.8);bGroup.add(tube);
+  // Main barrel tube - long cylinder
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,7,8),barrelMat);
+  tube.rotation.x=Math.PI/2;tube.position.set(0,0,-3.5);bGroup.add(tube);
 
   // Flash suppressor at tip
   const tipMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.15,0.5,8),tipMat);
-  tip.rotation.x=Math.PI/2;tip.position.set(0,0,-5.6);bGroup.add(tip);
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.2,0.6,8),tipMat);
+  tip.rotation.x=Math.PI/2;tip.position.set(0,0,-7.1);bGroup.add(tip);
 
-  // Barrel jacket/sleeve near breach
-  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,1.2,8),barrelMat);
-  sleeve.rotation.x=Math.PI/2;sleeve.position.set(0,0,-0.2);bGroup.add(sleeve);
+  // Barrel jacket near breach
+  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,1.5,8),barrelMat);
+  sleeve.rotation.x=Math.PI/2;sleeve.position.set(0,0,-0.3);bGroup.add(sleeve);
 
-  bGroup.position.set(bp.x,bp.y,-1.6);
+  bGroup.position.set(bp.x,bp.y,barrelRestZ);
   cannonPivot.add(bGroup);
-  barrels.push({group:bGroup,restZ:-1.6,recoil:0});
+  barrels.push({group:bGroup,restZ:barrelRestZ,recoil:0});
 
-  // Muzzle flash (hidden by default)
-  const flashGeo=new THREE.SphereGeometry(0.5,6,6);
-  const flashMat=new THREE.MeshBasicMaterial({color:0xffaa00,transparent:true,opacity:0});
-  const flash=new THREE.Mesh(flashGeo,flashMat);
-  flash.position.set(bp.x,bp.y,-7.4);
+  // Muzzle flash
+  const flashGeo=new THREE.SphereGeometry(0.6,6,6);
+  const flashMat2=new THREE.MeshBasicMaterial({color:0xffaa00,transparent:true,opacity:0});
+  const flash=new THREE.Mesh(flashGeo,flashMat2);
+  flash.position.set(bp.x,bp.y,barrelRestZ-7.6);
   cannonPivot.add(flash);
   barrelFlashes.push(flash);
 }
 
-// Ammo feed mechanism between barrel pairs
+// Iron sight / ring sight on top of the gun
+const sightMat=new THREE.MeshLambertMaterial({color:0x333333});
+// Sight post - vertical bar
+const sightPost=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.8,0.1),sightMat);
+sightPost.position.set(0,2.7,-4);cannonPivot.add(sightPost);
+// Ring sight - a ring the player looks through
+const ringGeo=new THREE.TorusGeometry(0.5,0.04,8,16);
+const ringSight=new THREE.Mesh(ringGeo,sightMat);
+ringSight.position.set(0,3.1,-4);cannonPivot.add(ringSight);
+// Small front bead
+const bead=new THREE.Mesh(new THREE.SphereGeometry(0.06,6,6),new THREE.MeshBasicMaterial({color:0xff4400}));
+bead.position.set(0,3.6,-6);cannonPivot.add(bead);
+// Front sight post
+const frontPost=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.6,0.08),sightMat);
+frontPost.position.set(0,3.3,-6);cannonPivot.add(frontPost);
+
+// Ammo feed mechanism
 const feedMat=new THREE.MeshLambertMaterial({color:0x444444});
-const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.2,1.5),feedMat);
-feedL.position.set(-0.55,0.35,0.8);cannonPivot.add(feedL);
-const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.2,1.5),feedMat);
-feedR.position.set(0.55,0.35,0.8);cannonPivot.add(feedR);
+const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,2),feedMat);
+feedL.position.set(-0.8,0.4,1);cannonPivot.add(feedL);
+const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,2),feedMat);
+feedR.position.set(0.8,0.4,1);cannonPivot.add(feedR);
 
-// Seat/shoulder rests on sides (gunner positions)
+// Gunner seats
 const seatMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const seatL=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.6,1.2),seatMat);
-seatL.position.set(-2.6,-0.3,0.5);cannonPivot.add(seatL);
-const seatR=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.6,1.2),seatMat);
-seatR.position.set(2.6,-0.3,0.5);cannonPivot.add(seatR);
+const seatL=new THREE.Mesh(new THREE.BoxGeometry(1,0.8,1.5),seatMat);
+seatL.position.set(-3.5,-0.4,0.5);cannonPivot.add(seatL);
+const seatR=new THREE.Mesh(new THREE.BoxGeometry(1,0.8,1.5),seatMat);
+seatR.position.set(3.5,-0.4,0.5);cannonPivot.add(seatR);
 
-cannonPivot.position.y=2;
+cannonPivot.position.y=2.5;
 cannonGroup.add(cannonPivot);
-cannonGroup.position.set(0,-4,-5);
+cannonGroup.position.set(0,-5.5,-6);
 camera.add(cannonGroup);
 scene.add(camera);
 
-// ---- Auto-fire state ----
+// ---- Game State ----
 let mouseDown=false,currentBarrel=0,fireTimer=0;
-const FIRE_INTERVAL=1/8; // ~2 rounds/sec total = 8 barrel-fires/sec? No: 2 rounds/sec = 0.5s per round, 4 barrels cycling = 0.125s per barrel
-// Actually: "~2 rounds per second total" means 2 shells/sec, so interval = 0.5s
-// But with 4 barrels cycling, each barrel fires every 2s, and we get a shot every 0.5s
-const FIRE_RATE=0.5; // seconds between shots (2 rounds/sec total)
-
-// ---- Game State (Fix #5: no waves, lives, game over) ----
+const FIRE_RATE=0.5;
 let score=0,gameActive=false;
-const shells=[],planes=[],flakPuffs=[],debris=[];
+const shells=[],planes=[],flakPuffs=[],debris=[],fallingPlanes=[],splashes=[];
 let aimPitch=0.3,aimYaw=0;
-const SHELL_SPEED=180,BLAST_RADIUS=12;
-let spawnTimer=0,spawnInterval=1.8;
-let mouseX=0,mouseY=0;
+const SHELL_SPEED=180,BLAST_RADIUS=22;
 
 const scoreEl=document.getElementById('score');
+const waveInfoEl=document.getElementById('wave-info');
+
+// ---- Raid Wave System ----
+const WAVE_TYPES=[
+  {name:'High Altitude Bombing Run',count:[5,8],alt:[160,250],speed:[20,30],pause:7},
+  {name:'Low Torpedo Run',count:[3,5],alt:[25,50],speed:[25,35],pause:6},
+  {name:'Medium Strafing Run',count:[4,6],alt:[70,130],speed:[35,55],pause:5},
+];
+let waveTimer=0,waveActive=false,waveQueue=[],wavePlanesSpawned=0,waveTotal=0;
+let waveDir=0,waveAlt=0,waveSpeed=0,waveType=null;
+let wavePause=3; // initial pause before first wave
+let waveSpawnInterval=0.6;
+let waveSpawnTimer=0;
+let waveNumber=0;
+
+function startNextWave(){
+  waveNumber++;
+  const type=WAVE_TYPES[Math.floor(Math.random()*WAVE_TYPES.length)];
+  waveType=type;
+  waveTotal=type.count[0]+Math.floor(Math.random()*(type.count[1]-type.count[0]+1));
+  waveDir=Math.random()*Math.PI*2;
+  waveAlt=type.alt[0]+Math.random()*(type.alt[1]-type.alt[0]);
+  waveSpeed=type.speed[0]+Math.random()*(type.speed[1]-type.speed[0]);
+  wavePlanesSpawned=0;
+  waveSpawnTimer=0;
+  waveSpawnInterval=0.4+Math.random()*0.4;
+  waveActive=true;
+  // Show wave info
+  waveInfoEl.textContent=type.name.toUpperCase()+' — Wave '+waveNumber;
+  waveInfoEl.style.opacity='1';
+  setTimeout(()=>{waveInfoEl.style.opacity='0'},3000);
+}
 
 // ---- Plane factory ----
 function createPlane(){
@@ -285,52 +335,35 @@ function createPlane(){
   return g;
 }
 
-function spawnPlane(){
+function spawnWavePlane(){
   const mesh=createPlane();
-  // Varied altitudes: some low and easy, some very high and hard
-  const altRoll=Math.random();
-  const alt=altRoll<0.25?40+Math.random()*30       // low: 40-70
-           :altRoll<0.6?70+Math.random()*60         // mid: 70-130
-           :altRoll<0.85?130+Math.random()*70       // high: 130-200
-           :200+Math.random()*80;                    // very high: 200-280
-  const angle=Math.random()*Math.PI*2;
-  const dist=500+Math.random()*200;
-  const sx=Math.cos(angle)*dist,sz=Math.sin(angle)*dist;
-  // Varied speeds: some slow bombers, some fast fighters
-  const speedRoll=Math.random();
-  const speed=speedRoll<0.3?18+Math.random()*10     // slow: 18-28
-             :speedRoll<0.7?28+Math.random()*18     // medium: 28-46
-             :46+Math.random()*25;                   // fast: 46-71
-  const tx=Math.random()*200-100,tz=Math.random()*200-100;
+  const alt=waveAlt+(Math.random()-0.5)*15; // small variation within wave
+  const angleVar=waveDir+(Math.random()-0.5)*0.3; // slight spread
+  const dist=450+Math.random()*150;
+  const sx=Math.cos(angleVar)*dist,sz=Math.sin(angleVar)*dist;
+  const speed=waveSpeed+(Math.random()-0.5)*5;
+  // Fly toward center area
+  const tx=(Math.random()-0.5)*80,tz=(Math.random()-0.5)*80;
   const dx=tx-sx,dz=tz-sz,len=Math.sqrt(dx*dx+dz*dz);
   const vx=dx/len*speed,vz=dz/len*speed;
   mesh.position.set(sx,alt,sz);
   mesh.lookAt(sx+vx,alt,sz+vz);
-  // Scale planes at high altitude to look smaller
   const s=alt>150?0.7:alt>100?0.85:1;
   mesh.scale.setScalar(s);
   scene.add(mesh);
-  // HP: 1-3 depending on type
-  const hp=speedRoll<0.3?3:speedRoll<0.7?2:1; // slow bombers=tough, fast fighters=fragile
+  const hp=speed<30?3:speed<45?2:1;
   planes.push({mesh,vx,vz,alt,speed,hp,maxHp:hp,smoking:false,smokeTrail:[]});
 }
 
 // ---- Shell: visible traveling projectile ----
 function fireShell(){
   playCannonFire();
-
-  // Fire from current barrel
   const bi=currentBarrel;
   currentBarrel=(currentBarrel+1)%4;
-
-  // Barrel recoil
   barrels[bi].recoil=0.6;
-
-  // Muzzle flash on this barrel
   barrelFlashes[bi].material.opacity=1;
   setTimeout(()=>{barrelFlashes[bi].material.opacity=0},60);
 
-  // Muzzle flash light
   const bp=barrelPositions[bi];
   const flashLight=new THREE.PointLight(0xffaa00,4,20);
   const worldPos=new THREE.Vector3();
@@ -342,10 +375,8 @@ function fireShell(){
   const dir=new THREE.Vector3(0,0,-1);
   dir.applyQuaternion(camera.quaternion);
   dir.normalize();
-  // Tracer round - small bright dot
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(.25,4,4),new THREE.MeshBasicMaterial({color:0xffcc00}));
   mesh.position.copy(camera.position).add(new THREE.Vector3(0,-1,0));
-  // Tracer tail
   const tail=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,2,4),new THREE.MeshBasicMaterial({color:0xff8800,transparent:true,opacity:0.6}));
   tail.lookAt(dir);tail.rotateX(Math.PI/2);
   mesh.add(tail);
@@ -353,11 +384,10 @@ function fireShell(){
   shells.push({mesh,dir,speed:SHELL_SPEED,traveled:0,alive:true});
 }
 
-// ---- Flak Burst: dark grey/black puffs that linger in the sky ----
+// ---- Flak Burst ----
 function createFlakBurst(pos){
   playShellExplode();
   const g=new THREE.Group();
-  // Dark smoke puffs - the iconic flak burst look
   for(let i=0;i<14;i++){
     const shade=0x1a1a1a+Math.floor(Math.random()*0x222222);
     const puff=new THREE.Mesh(
@@ -369,7 +399,6 @@ function createFlakBurst(pos){
     puff.userData.vel=offset.clone().normalize().multiplyScalar(1.5+Math.random()*2);
     g.add(puff);
   }
-  // Brief orange flash at center
   const flash=new THREE.Mesh(
     new THREE.SphereGeometry(1.5,6,6),
     new THREE.MeshBasicMaterial({color:0xff6600,transparent:true,opacity:0.9})
@@ -378,90 +407,119 @@ function createFlakBurst(pos){
   g.add(flash);
   g.position.copy(pos);scene.add(g);
   const light=new THREE.PointLight(0xff6600,3,40);light.position.copy(pos);scene.add(light);
-  // Linger for 4-6 seconds so sky fills with puffs
   flakPuffs.push({group:g,light,age:0,duration:4+Math.random()*2});
 }
 
-// Check if a flak burst damages any planes within blast radius
 function checkFlakDamage(pos){
   for(let j=planes.length-1;j>=0;j--){
     const p=planes[j];
     const dist=p.mesh.position.distanceTo(pos);
     if(dist<BLAST_RADIUS){
       p.hp--;
-      if(p.hp>0&&!p.smoking){
-        // Start smoke trail on damaged planes
-        p.smoking=true;
-      }
+      if(p.hp>0&&!p.smoking)p.smoking=true;
       if(p.hp<=0){
         score++;
         scoreEl.textContent='Score: '+score;
-        explodePlane(p.mesh.position.clone());
-        scene.remove(p.mesh);
-        // Clean up smoke trail
-        p.smokeTrail.forEach(s=>scene.remove(s));
-        planes.splice(j,1);
+        // Don't remove — convert to falling wreckage
+        startPlaneCrash(p,j);
       }
     }
   }
 }
 
-// ---- Plane Explosion (Fix #3: visible fire, debris, breaking apart) ----
-function explodePlane(pos){
+// ---- Plane Crash System (planes fall, tumble, splash into ocean) ----
+function startPlaneCrash(p,idx){
   playPlaneExplode();
-  // Fire ball
+  // Remove from active planes
+  p.smokeTrail.forEach(s=>scene.remove(s));
+  planes.splice(idx,1);
+
+  // Initial explosion effect at the plane
+  const pos=p.mesh.position.clone();
   const fireGroup=new THREE.Group();
-  for(let i=0;i<15;i++){
-    const color=[0xff4400,0xff8800,0xffcc00,0xff2200][Math.floor(Math.random()*4)];
+  for(let i=0;i<10;i++){
+    const color=[0xff4400,0xff8800,0xffcc00][Math.floor(Math.random()*3)];
     const ball=new THREE.Mesh(
-      new THREE.SphereGeometry(1+Math.random()*3,6,6),
+      new THREE.SphereGeometry(0.8+Math.random()*2,5,5),
       new THREE.MeshBasicMaterial({color,transparent:true,opacity:1})
     );
-    const d=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize().multiplyScalar(2+Math.random()*4);
+    const d=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize().multiplyScalar(2+Math.random()*3);
     ball.position.copy(d);
-    ball.userData.vel=d.clone().normalize().multiplyScalar(15+Math.random()*20);
+    ball.userData.vel=d.clone().normalize().multiplyScalar(10+Math.random()*15);
     fireGroup.add(ball);
   }
-  // Black smoke
-  for(let i=0;i<10;i++){
-    const smoke=new THREE.Mesh(
-      new THREE.SphereGeometry(2+Math.random()*3,6,6),
-      new THREE.MeshBasicMaterial({color:0x222222,transparent:true,opacity:0.7})
-    );
-    const d=new THREE.Vector3(Math.random()-0.5,Math.random()*0.5,Math.random()-0.5).normalize().multiplyScalar(3+Math.random()*5);
-    smoke.position.copy(d);
-    smoke.userData.vel=d.clone().normalize().multiplyScalar(5+Math.random()*8);
-    fireGroup.add(smoke);
-  }
   fireGroup.position.copy(pos);scene.add(fireGroup);
-  const light=new THREE.PointLight(0xff4400,8,80);light.position.copy(pos);scene.add(light);
-  flakPuffs.push({group:fireGroup,light,age:0,duration:2.0});
+  const light=new THREE.PointLight(0xff4400,6,60);light.position.copy(pos);scene.add(light);
+  flakPuffs.push({group:fireGroup,light,age:0,duration:1.5});
 
-  // Debris pieces falling
-  for(let i=0;i<12;i++){
-    const size=0.5+Math.random()*2;
-    const geo=Math.random()>0.5?new THREE.BoxGeometry(size,0.3,size*2):new THREE.BoxGeometry(size*2,0.2,size);
-    const color=Math.random()>0.5?0x556655:0x667766;
-    const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color}));
-    m.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*8,(Math.random()-0.5)*4,(Math.random()-0.5)*8));
-    const vel=new THREE.Vector3((Math.random()-0.5)*40,Math.random()*10-15,(Math.random()-0.5)*40);
-    const rotVel=new THREE.Vector3(Math.random()*5,Math.random()*5,Math.random()*5);
-    scene.add(m);debris.push({mesh:m,vel,rotVel,age:0});
+  // Make the plane mesh look damaged — change color to dark/burning
+  p.mesh.traverse(child=>{
+    if(child.isMesh&&child.material){
+      child.material=child.material.clone();
+      child.material.color.setHex(0x332211);
+    }
+  });
+
+  // Add fire effect attached to the plane
+  const fireMeshes=[];
+  for(let i=0;i<4;i++){
+    const fire=new THREE.Mesh(
+      new THREE.SphereGeometry(0.8+Math.random()*1.2,5,5),
+      new THREE.MeshBasicMaterial({color:0xff4400,transparent:true,opacity:0.8})
+    );
+    fire.position.set((Math.random()-0.5)*4,Math.random()*2,(Math.random()-0.5)*4);
+    p.mesh.add(fire);
+    fireMeshes.push(fire);
   }
-  // Flaming debris
-  for(let i=0;i<6;i++){
-    const fire=new THREE.Mesh(new THREE.SphereGeometry(0.6,4,4),new THREE.MeshBasicMaterial({color:0xff4400,transparent:true}));
-    fire.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*6,Math.random()*2,(Math.random()-0.5)*6));
-    const vel=new THREE.Vector3((Math.random()-0.5)*20,-10-Math.random()*15,(Math.random()-0.5)*20);
-    scene.add(fire);debris.push({mesh:fire,vel,rotVel:new THREE.Vector3(),age:0,isFire:true});
-  }
+
+  // Convert to falling plane
+  fallingPlanes.push({
+    mesh:p.mesh,
+    vx:p.vx*0.5, // keep some forward momentum
+    vz:p.vz*0.5,
+    vy:-5-Math.random()*10, // start falling
+    rotX:(Math.random()-0.5)*3, // tumble rates
+    rotZ:(Math.random()-0.5)*3,
+    rotY:(Math.random()-0.5)*1,
+    fireMeshes,
+    smokeTimer:0,
+    smokeTrail:[]
+  });
 }
 
-// ---- Input ----
+// ---- Splash/Impact effect when wreckage hits ocean ----
+function createSplash(pos){
+  playSplash();
+  const g=new THREE.Group();
+  // Water spray
+  for(let i=0;i<12;i++){
+    const spray=new THREE.Mesh(
+      new THREE.SphereGeometry(0.5+Math.random()*1.5,5,5),
+      new THREE.MeshBasicMaterial({color:0x88bbdd,transparent:true,opacity:0.7})
+    );
+    const angle=Math.random()*Math.PI*2;
+    const speed=8+Math.random()*15;
+    spray.userData.vel=new THREE.Vector3(Math.cos(angle)*speed,10+Math.random()*15,Math.sin(angle)*speed);
+    g.add(spray);
+  }
+  // White foam ring
+  const foam=new THREE.Mesh(
+    new THREE.RingGeometry(0.5,4,16),
+    new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.6,side:THREE.DoubleSide})
+  );
+  foam.rotation.x=-Math.PI/2;
+  foam.userData.isRing=true;
+  g.add(foam);
+  g.position.set(pos.x,0.5,pos.z);
+  scene.add(g);
+  splashes.push({group:g,age:0,duration:2.5});
+}
+
+// ---- Input (FIX #1: correct mouse direction — positive movementX = aim right) ----
 document.addEventListener('mousemove',e=>{
   if(!gameActive)return;
-  aimYaw+=e.movementX*-.002;
-  aimPitch+=e.movementY*-.002;
+  aimYaw+=e.movementX*.002;
+  aimPitch-=e.movementY*.002;
   aimPitch=Math.max(.05,Math.min(1.4,aimPitch));
 });
 document.addEventListener('mousedown',e=>{
@@ -484,7 +542,6 @@ function update(time){
   camera.rotateY(-aimYaw);
   camera.rotateX(aimPitch);
 
-  // Cannon is attached to camera, just tilt barrel slightly with pitch
   cannonPivot.rotation.set(0,0,0);
 
   // Auto-fire while holding mouse
@@ -501,36 +558,44 @@ function update(time){
     const b=barrels[i];
     if(b.recoil>0){
       b.recoil=Math.max(0,b.recoil-dt*4);
-      b.group.position.z=b.restZ+b.recoil*0.4;
+      b.group.position.z=b.restZ+b.recoil*0.5;
     }else{
       b.group.position.z=b.restZ;
     }
   }
 
-  // Spawn planes continuously (Fix #5: no waves, just endless)
-  spawnTimer+=dt;
-  if(spawnTimer>=spawnInterval){
-    spawnTimer=0;
-    spawnPlane();
-    // Gradually speed up spawning, min 0.8s
-    spawnInterval=Math.max(0.8,spawnInterval-0.005);
+  // ---- Wave spawning system ----
+  if(!waveActive){
+    wavePause-=dt;
+    if(wavePause<=0){
+      startNextWave();
+    }
+  }else{
+    waveSpawnTimer+=dt;
+    if(waveSpawnTimer>=waveSpawnInterval&&wavePlanesSpawned<waveTotal){
+      waveSpawnTimer=0;
+      spawnWavePlane();
+      wavePlanesSpawned++;
+      if(wavePlanesSpawned>=waveTotal){
+        waveActive=false;
+        wavePause=5+Math.random()*5; // 5-10 second pause between waves
+      }
+    }
   }
 
-  // Update shells - they travel visibly, explode on proximity fuse or at max range
+  // Update shells
   for(let i=shells.length-1;i>=0;i--){
     const s=shells[i];
     s.mesh.position.addScaledVector(s.dir,s.speed*dt);
     s.traveled+=s.speed*dt;
     let detonated=false;
-    // Proximity fuse: detonate if within 20 units of any plane (after min travel)
     if(s.traveled>40){
       for(let j=0;j<planes.length;j++){
-        if(planes[j].mesh.position.distanceTo(s.mesh.position)<20){
+        if(planes[j].mesh.position.distanceTo(s.mesh.position)<22){
           detonated=true;break;
         }
       }
     }
-    // Also detonate at max range
     if(s.traveled>600)detonated=true;
     if(detonated){
       const burstPos=s.mesh.position.clone();
@@ -540,7 +605,7 @@ function update(time){
     }
   }
 
-  // Update planes (Fix #5: no lives lost, just remove when far)
+  // Update active planes
   for(let i=planes.length-1;i>=0;i--){
     const p=planes[i];
     p.mesh.position.x+=p.vx*dt;
@@ -560,7 +625,6 @@ function update(time){
         p.smokeTrail.push(smoke);
         smoke.userData.age=0;
       }
-      // Fade and remove old smoke
       for(let si=p.smokeTrail.length-1;si>=0;si--){
         const sm=p.smokeTrail[si];
         sm.userData.age+=dt;
@@ -575,7 +639,69 @@ function update(time){
     }
   }
 
-  // Update flak puffs & explosions - dark puffs linger in sky
+  // Update falling/crashing planes
+  for(let i=fallingPlanes.length-1;i>=0;i--){
+    const fp=fallingPlanes[i];
+    fp.vy-=15*dt; // gravity
+    fp.mesh.position.x+=fp.vx*dt;
+    fp.mesh.position.y+=fp.vy*dt;
+    fp.mesh.position.z+=fp.vz*dt;
+    fp.mesh.rotation.x+=fp.rotX*dt;
+    fp.mesh.rotation.z+=fp.rotZ*dt;
+    fp.mesh.rotation.y+=fp.rotY*dt;
+
+    // Smoke trail while falling
+    fp.smokeTimer+=dt;
+    if(fp.smokeTimer>0.06){
+      fp.smokeTimer=0;
+      const smoke=new THREE.Mesh(
+        new THREE.SphereGeometry(0.6+Math.random()*1,4,4),
+        new THREE.MeshBasicMaterial({color:Math.random()>0.5?0x222222:0x553311,transparent:true,opacity:0.6})
+      );
+      smoke.position.copy(fp.mesh.position);
+      scene.add(smoke);
+      fp.smokeTrail.push(smoke);
+      smoke.userData.age=0;
+    }
+    for(let si=fp.smokeTrail.length-1;si>=0;si--){
+      const sm=fp.smokeTrail[si];
+      sm.userData.age+=dt;
+      sm.material.opacity=Math.max(0,0.6-sm.userData.age*0.2);
+      sm.scale.setScalar(1+sm.userData.age*2);
+      if(sm.userData.age>3){scene.remove(sm);fp.smokeTrail.splice(si,1);}
+    }
+
+    // Flicker fire
+    fp.fireMeshes.forEach(f=>{
+      f.material.opacity=0.5+Math.random()*0.5;
+      f.scale.setScalar(0.8+Math.random()*0.6);
+    });
+
+    // Hit the ocean
+    if(fp.mesh.position.y<=0){
+      createSplash(fp.mesh.position);
+      // Small debris burst at impact
+      for(let d=0;d<6;d++){
+        const size=0.3+Math.random()*1;
+        const geo=new THREE.BoxGeometry(size,0.2,size*1.5);
+        const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:0x443322}));
+        m.position.copy(fp.mesh.position);m.position.y=1;
+        const vel=new THREE.Vector3((Math.random()-0.5)*20,5+Math.random()*10,(Math.random()-0.5)*20);
+        scene.add(m);debris.push({mesh:m,vel,rotVel:new THREE.Vector3(Math.random()*4,Math.random()*4,Math.random()*4),age:0});
+      }
+      fp.smokeTrail.forEach(s=>scene.remove(s));
+      scene.remove(fp.mesh);
+      fallingPlanes.splice(i,1);
+    }
+    // Remove if too far away
+    if(fp.mesh.position.length()>900){
+      fp.smokeTrail.forEach(s=>scene.remove(s));
+      scene.remove(fp.mesh);
+      fallingPlanes.splice(i,1);
+    }
+  }
+
+  // Update flak puffs & explosions
   for(let i=flakPuffs.length-1;i>=0;i--){
     const e=flakPuffs[i];e.age+=dt;
     const t=e.age/e.duration;
@@ -584,13 +710,10 @@ function update(time){
     e.group.children.forEach(c=>{
       if(c.material){
         if(c.userData.isFlash){
-          // Flash fades quickly
           c.material.opacity=Math.max(0,0.9-e.age*6);
         }else if(c.userData.vel){
-          // Dark puffs expand slowly and fade very gradually
           c.position.addScaledVector(c.userData.vel,dt*0.3);
           c.scale.setScalar(1+t*2.5);
-          // Stay mostly opaque for first 60% of life, then fade
           c.material.opacity=t<0.6?0.75:Math.max(0,0.75*(1-(t-0.6)/0.4));
         }
       }
@@ -608,6 +731,23 @@ function update(time){
     if(d.mesh.position.y<0||d.age>6){scene.remove(d.mesh);debris.splice(i,1)}
   }
 
+  // Update splashes
+  for(let i=splashes.length-1;i>=0;i--){
+    const sp=splashes[i];sp.age+=dt;
+    const t=sp.age/sp.duration;
+    if(t>=1){scene.remove(sp.group);splashes.splice(i,1);continue}
+    sp.group.children.forEach(c=>{
+      if(c.userData.isRing){
+        c.scale.setScalar(1+sp.age*4);
+        c.material.opacity=Math.max(0,0.6-t);
+      }else if(c.userData.vel){
+        c.userData.vel.y-=30*dt;
+        c.position.addScaledVector(c.userData.vel,dt);
+        c.material.opacity=Math.max(0,0.7-t);
+      }
+    });
+  }
+
   // Clouds drift
   clouds.forEach(c=>{c.position.x+=2*dt;if(c.position.x>800)c.position.x=-800});
 
@@ -615,12 +755,15 @@ function update(time){
 }
 
 function startGame(){
-  score=0;spawnInterval=1.8;spawnTimer=0;
+  score=0;
   scoreEl.textContent='Score: 0';
   shells.forEach(s=>scene.remove(s.mesh));shells.length=0;
   planes.forEach(p=>{scene.remove(p.mesh);if(p.smokeTrail)p.smokeTrail.forEach(s=>scene.remove(s))});planes.length=0;
   flakPuffs.forEach(e=>{scene.remove(e.group);scene.remove(e.light)});flakPuffs.length=0;
   debris.forEach(d=>scene.remove(d.mesh));debris.length=0;
+  fallingPlanes.forEach(fp=>{fp.smokeTrail.forEach(s=>scene.remove(s));scene.remove(fp.mesh)});fallingPlanes.length=0;
+  splashes.forEach(sp=>scene.remove(sp.group));splashes.length=0;
+  waveActive=false;wavePause=3;waveNumber=0;
   gameActive=true;lastTime=performance.now();
   try{renderer.domElement.requestPointerLock();}catch(e){}
 }
