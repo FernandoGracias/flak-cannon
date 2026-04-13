@@ -199,10 +199,10 @@ shieldTop.position.set(0,1.7,0.5);cannonPivot.add(shieldTop);
 // Four barrels in 2x2 grid — WIDE separation so they're clearly four distinct tubes
 const barrelMat=new THREE.MeshLambertMaterial({color:0x555555});
 const barrelPositions=[
-  {x:-1.1,y:1.2},   // top-left
-  {x:1.1,y:1.2},    // top-right
-  {x:-1.1,y:-0.3},  // bottom-left
-  {x:1.1,y:-0.3},   // bottom-right
+  {x:-3.8,y:1.0},   // left-top
+  {x:-3.8,y:-0.4},  // left-bottom
+  {x:3.8,y:1.0},    // right-top
+  {x:3.8,y:-0.4},   // right-bottom
 ];
 const barrels=[];
 const barrelFlashes=[];
@@ -304,7 +304,7 @@ const FIRE_RATE=0.5;
 let score=0,gameActive=false;
 const shells=[],planes=[],flakPuffs=[],debris=[],fallingPlanes=[],splashes=[];
 let aimPitch=0.3,aimYaw=0;
-const SHELL_SPEED=180,BLAST_RADIUS=22;
+const SHELL_SPEED=180,BLAST_RADIUS=18;
 
 const scoreEl=document.getElementById('score');
 const waveInfoEl=document.getElementById('wave-info');
@@ -334,65 +334,79 @@ function generateWave(){
   const wave={type,planes:[]};
   let waveName='';
 
+  // Raid size: small 15-25, medium 30-50, large 60-100
+  const sizeRoll=Math.random();
+  const raidSize=sizeRoll<0.5?15+Math.floor(Math.random()*11):sizeRoll<0.85?30+Math.floor(Math.random()*21):60+Math.floor(Math.random()*41);
+
   if(type==='high_bombing'){
     waveName='High Altitude Bombing Run';
-    const count=5+Math.floor(Math.random()*4);
     const alt=180+Math.random()*80;
     const speed=20+Math.random()*8;
-    const formation=Math.random()>0.5?'V':'line';
-    for(let i=0;i<count;i++){
-      let offX,offZ;
-      if(formation==='V'){
-        const side=i%2===0?1:-1;
-        const rank=Math.ceil(i/2);
-        offX=perpX*side*rank*18;
-        offZ=perpZ*side*rank*18+rank*12;
-      }else{
-        offX=perpX*(i-(count-1)/2)*18;
-        offZ=0;
+    // Box formation: rows x cols
+    const cols=Math.min(12,Math.ceil(Math.sqrt(raidSize*1.5)));
+    const rows=Math.ceil(raidSize/cols);
+    let idx=0;
+    for(let r=0;r<rows&&idx<raidSize;r++){
+      for(let c=0;c<cols&&idx<raidSize;c++){
+        const offX=perpX*(c-(cols-1)/2)*18;
+        const offZ=r*(-20);
+        wave.planes.push({x:baseX+offX+dx*offZ+(Math.random()-0.5)*4,z:baseZ+perpZ*(c-(cols-1)/2)*18+dz*offZ+(Math.random()-0.5)*4,
+          alt:alt+(Math.random()-0.5)*8,speed:speed+(Math.random()-0.5)*3,dx,dz,hp:3});
+        idx++;
       }
-      wave.planes.push({x:baseX+offX+(Math.random()-0.5)*4,z:baseZ+offZ+(Math.random()-0.5)*4,
-        alt:alt+(Math.random()-0.5)*8,speed:speed+(Math.random()-0.5)*3,dx,dz,hp:3});
     }
   }else if(type==='low_torpedo'){
     waveName='Low Altitude Torpedo Run';
-    const count=3+Math.floor(Math.random()*3);
     const alt=30+Math.random()*20;
     const speed=50+Math.random()*15;
-    for(let i=0;i<count;i++){
-      wave.planes.push({x:baseX+perpX*(i-(count-1)/2)*22+(Math.random()-0.5)*5,
-        z:baseZ+perpZ*(i-(count-1)/2)*22+(Math.random()-0.5)*5,
-        alt:alt+(Math.random()-0.5)*6,speed:speed+(Math.random()-0.5)*5,dx,dz,hp:1});
+    // Spread in loose line-abreast waves
+    const cols=Math.min(8,Math.ceil(raidSize/2));
+    let idx=0;
+    for(let r=0;idx<raidSize;r++){
+      for(let c=0;c<cols&&idx<raidSize;c++){
+        wave.planes.push({x:baseX+perpX*(c-(cols-1)/2)*22+dx*r*(-25)+(Math.random()-0.5)*5,
+          z:baseZ+perpZ*(c-(cols-1)/2)*22+dz*r*(-25)+(Math.random()-0.5)*5,
+          alt:alt+(Math.random()-0.5)*6,speed:speed+(Math.random()-0.5)*5,dx,dz,hp:1});
+        idx++;
+      }
     }
   }else if(type==='medium_strafing'){
     waveName='Medium Altitude Strafing Run';
-    const count=4+Math.floor(Math.random()*3);
     const alt=70+Math.random()*50;
     const speed=38+Math.random()*12;
-    for(let i=0;i<count;i++){
+    // Pairs in echelon
+    for(let i=0;i<raidSize;i++){
       const pair=Math.floor(i/2);
       const side=i%2===0?1:-1;
-      wave.planes.push({x:baseX+perpX*side*12+dx*pair*(-25)+(Math.random()-0.5)*4,
-        z:baseZ+perpZ*side*12+dz*pair*(-25)+(Math.random()-0.5)*4,
+      wave.planes.push({x:baseX+perpX*side*12+dx*pair*(-22)+(Math.random()-0.5)*4,
+        z:baseZ+perpZ*side*12+dz*pair*(-22)+(Math.random()-0.5)*4,
         alt:alt+(Math.random()-0.5)*8,speed:speed+(Math.random()-0.5)*4,dx,dz,hp:2});
     }
   }else{
     waveName='Mixed Formation';
     const alt=100+Math.random()*60;
-    const bomberCount=3+Math.floor(Math.random()*2);
-    const fighterCount=2+Math.floor(Math.random()*3);
+    const bomberCount=Math.ceil(raidSize*0.6);
+    const fighterCount=raidSize-bomberCount;
     const bomberSpeed=22+Math.random()*6;
-    for(let i=0;i<bomberCount;i++){
-      wave.planes.push({x:baseX+perpX*(i-(bomberCount-1)/2)*20+(Math.random()-0.5)*3,
-        z:baseZ+perpZ*(i-(bomberCount-1)/2)*20+(Math.random()-0.5)*3,
-        alt:alt+(Math.random()-0.5)*6,speed:bomberSpeed+(Math.random()-0.5)*3,dx,dz,hp:3});
+    // Bombers in box
+    const cols=Math.min(10,Math.ceil(Math.sqrt(bomberCount*1.5)));
+    let idx=0;
+    for(let r=0;idx<bomberCount;r++){
+      for(let c=0;c<cols&&idx<bomberCount;c++){
+        const offX=perpX*(c-(cols-1)/2)*20;
+        const offZ=r*(-20);
+        wave.planes.push({x:baseX+offX+dx*offZ+(Math.random()-0.5)*3,z:baseZ+perpZ*(c-(cols-1)/2)*20+dz*offZ+(Math.random()-0.5)*3,
+          alt:alt+(Math.random()-0.5)*6,speed:bomberSpeed+(Math.random()-0.5)*3,dx,dz,hp:3});
+        idx++;
+      }
     }
+    // Fighters flanking
     for(let i=0;i<fighterCount;i++){
       const side=i%2===0?1:-1;
       const rank=Math.ceil((i+1)/2);
-      wave.planes.push({x:baseX+perpX*side*rank*28+dx*(-30)+(Math.random()-0.5)*5,
-        z:baseZ+perpZ*side*rank*28+dz*(-30)+(Math.random()-0.5)*5,
-        alt:alt+(Math.random()-0.5)*10,speed:bomberSpeed+15+Math.random()*8,dx,dz,hp:1});
+      wave.planes.push({x:baseX+perpX*side*(rank*20+cols*10)+dx*(-30)+(Math.random()-0.5)*5,
+        z:baseZ+perpZ*side*(rank*20+cols*10)+dz*(-30)+(Math.random()-0.5)*5,
+        alt:alt+10+(Math.random()-0.5)*10,speed:bomberSpeed+15+Math.random()*8,dx,dz,hp:1});
     }
   }
   wave.name=waveName;
@@ -672,7 +686,7 @@ function update(time){
     let detonated=false;
     if(s.traveled>40){
       for(let j=0;j<planes.length;j++){
-        if(planes[j].mesh.position.distanceTo(s.mesh.position)<22){
+        if(planes[j].mesh.position.distanceTo(s.mesh.position)<18){
           detonated=true;break;
         }
       }
