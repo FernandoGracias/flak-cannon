@@ -185,19 +185,19 @@ mount.position.set(0,0,0.5);cannonPivot.add(mount);
 
 // Armored shield - front plate with barrel cutouts (solid plate, barrels poke through)
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
-const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(7,4.5,0.3),shieldMat);
-shieldFront.position.set(0,0.5,-2);cannonPivot.add(shieldFront);
+const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(7,3.5,0.3),shieldMat);
+shieldFront.position.set(0,0,-2);cannonPivot.add(shieldFront);
 // Shield side plates
-const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.3,4.5,5.5),shieldMat);
-shieldL.position.set(-3.5,0.5,0.5);cannonPivot.add(shieldL);
-const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.3,4.5,5.5),shieldMat);
-shieldR.position.set(3.5,0.5,0.5);cannonPivot.add(shieldR);
+const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.3,3.5,5.5),shieldMat);
+shieldL.position.set(-3.5,0,0.5);cannonPivot.add(shieldL);
+const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.3,3.5,5.5),shieldMat);
+shieldR.position.set(3.5,0,0.5);cannonPivot.add(shieldR);
 // Shield top plate
 const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(7,0.25,5.5),shieldMat);
-shieldTop.position.set(0,2.7,0.5);cannonPivot.add(shieldTop);
+shieldTop.position.set(0,1.7,0.5);cannonPivot.add(shieldTop);
 
 // Four barrels in 2x2 grid — WIDE separation so they're clearly four distinct tubes
-const barrelMat=new THREE.MeshLambertMaterial({color:0x606060});
+const barrelMat=new THREE.MeshLambertMaterial({color:0x555555});
 const barrelPositions=[
   {x:-1.1,y:1.2},   // top-left
   {x:1.1,y:1.2},    // top-right
@@ -213,15 +213,15 @@ for(let i=0;i<4;i++){
   const bGroup=new THREE.Group();
 
   // Main barrel tube — long thin cylinder (40mm barrel ~2.4m scaled up)
-  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.22,8,8),barrelMat);
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.3,8,8),barrelMat);
   tube.rotation.x=Math.PI/2;tube.position.set(0,0,-4);bGroup.add(tube);
 
   // Flash suppressor at muzzle
-  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.18,0.7,8),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.25,0.7,8),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
   tip.rotation.x=Math.PI/2;tip.position.set(0,0,-8.2);bGroup.add(tip);
 
   // Barrel jacket/sleeve near breech
-  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,1.8,8),barrelMat);
+  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,1.8,8),barrelMat);
   sleeve.rotation.x=Math.PI/2;sleeve.position.set(0,0,-0.2);bGroup.add(sleeve);
 
   bGroup.position.set(bp.x,bp.y,barrelRestZ);
@@ -240,18 +240,18 @@ for(let i=0;i<4;i++){
 const sightWireMat=new THREE.MeshBasicMaterial({color:0x222222});
 const sightLineMat=new THREE.LineBasicMaterial({color:0x222222,transparent:true,opacity:0.7});
 const sightZ=-6;
-const sightY=3.2;
+const sightY=2.5;
 const sightR=1.4; // outer ring radius
 
 // Support posts — thin triangular frame
-const postGeo=new THREE.CylinderGeometry(0.04,0.04,2.8,4);
+const postGeo=new THREE.CylinderGeometry(0.04,0.04,2,4);
 const postL=new THREE.Mesh(postGeo,sightWireMat);
-postL.position.set(-0.6,1.8,sightZ);cannonPivot.add(postL);
+postL.position.set(-0.6,1.5,sightZ);cannonPivot.add(postL);
 const postR=new THREE.Mesh(postGeo,sightWireMat);
-postR.position.set(0.6,1.8,sightZ);cannonPivot.add(postR);
+postR.position.set(0.6,1.5,sightZ);cannonPivot.add(postR);
 // Cross brace
 const brace=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,4),sightWireMat);
-brace.rotation.z=Math.PI/2;brace.position.set(0,2.6,sightZ);cannonPivot.add(brace);
+brace.rotation.z=Math.PI/2;brace.position.set(0,2.0,sightZ);cannonPivot.add(brace);
 
 // Concentric rings (outer ring + 3 inner rings)
 const ringRadii=[sightR, sightR*0.7, sightR*0.45, sightR*0.2];
@@ -294,7 +294,7 @@ seatR2.position.set(4,-0.6,0.5);cannonPivot.add(seatR2);
 
 cannonPivot.position.y=2.5;
 cannonGroup.add(cannonPivot);
-cannonGroup.position.set(0,-5,-5);
+cannonGroup.position.set(0,-6.5,-7);
 camera.add(cannonGroup);
 scene.add(camera);
 
