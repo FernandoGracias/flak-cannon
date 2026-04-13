@@ -29,7 +29,7 @@ canvas{display:block}
 <div id="start-screen">
   <h1>FLAK CANNON</h1>
   <p>Defend the skies against incoming bombers</p>
-  <div class="hint">Click to start — Mouse to aim, Left Click to fire</div>
+  <div class="hint">Click to start — Mouse to aim, Hold Left Click to fire</div>
 </div>
 <div id="hud">
   <div id="score">Score: 0</div>
@@ -154,50 +154,108 @@ function makeCloud(x,y,z){
 }
 for(let i=0;i<25;i++)makeCloud(Math.random()*1600-800,60+Math.random()*120,Math.random()*1600-800);
 
-// ---- FLAK CANNON MODEL (Fix #1) ----
+// ---- QUAD 40mm BOFORS MOUNT ----
 const cannonGroup=new THREE.Group();
-const cannonPivot=new THREE.Group(); // rotates to follow aim
+const cannonPivot=new THREE.Group();
 
-// Base platform
+// Base platform - heavy circular base
 const baseMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const base=new THREE.Mesh(new THREE.CylinderGeometry(2.5,3,1.2,8),baseMat);
-base.position.y=0.6;cannonGroup.add(base);
+const base=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.8,1.4,12),baseMat);
+base.position.y=0.7;cannonGroup.add(base);
 
 // Turret ring
 const ringMat=new THREE.MeshLambertMaterial({color:0x4a4a4a});
-const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.8,2,0.5,12),ringMat);
-ring.position.y=1.4;cannonGroup.add(ring);
+const ring=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.8,0.6,16),ringMat);
+ring.position.y=1.6;cannonGroup.add(ring);
 
-// Gun mount (the part that rotates)
+// Main turret housing - beefy box
 const mountMat=new THREE.MeshLambertMaterial({color:0x505050});
-const mount=new THREE.Mesh(new THREE.BoxGeometry(1.5,1,2),mountMat);
-mount.position.set(0,0.3,0);cannonPivot.add(mount);
+const mount=new THREE.Mesh(new THREE.BoxGeometry(3.5,2,3),mountMat);
+mount.position.set(0,0.2,0);cannonPivot.add(mount);
 
-// Barrel
-const barrelMat=new THREE.MeshLambertMaterial({color:0x606060});
-const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.3,5,8),barrelMat);
-barrel.rotation.x=Math.PI/2;
-barrel.position.set(0,0.5,-2.8);cannonPivot.add(barrel);
-
-// Barrel tip / flash suppressor
-const tipMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.25,0.6,8),tipMat);
-tip.rotation.x=Math.PI/2;
-tip.position.set(0,0.5,-5.3);cannonPivot.add(tip);
-
-// Shield plates
+// Armored shield - front plate (angled)
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
-const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.15,1.5,2.5),shieldMat);
-shieldL.position.set(-0.9,0.5,-0.5);cannonPivot.add(shieldL);
-const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.15,1.5,2.5),shieldMat);
-shieldR.position.set(0.9,0.5,-0.5);cannonPivot.add(shieldR);
+const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(4,2.8,0.2),shieldMat);
+shieldFront.position.set(0,0.3,-1.6);cannonPivot.add(shieldFront);
 
-cannonPivot.position.y=1.7;
+// Shield side plates
+const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.2,2.8,3.4),shieldMat);
+shieldL.position.set(-2,0.3,0);cannonPivot.add(shieldL);
+const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.2,2.8,3.4),shieldMat);
+shieldR.position.set(2,0.3,0);cannonPivot.add(shieldR);
+
+// Shield top plate
+const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(4,0.15,3.4),shieldMat);
+shieldTop.position.set(0,1.7,0);cannonPivot.add(shieldTop);
+
+// Four barrels in 2x2 grid: [TL, TR, BL, BR]
+const barrelMat=new THREE.MeshLambertMaterial({color:0x606060});
+const barrelPositions=[
+  {x:-0.55,y:0.8},  // top-left
+  {x:0.55,y:0.8},   // top-right
+  {x:-0.55,y:-0.1},  // bottom-left
+  {x:0.55,y:-0.1},   // bottom-right
+];
+const barrels=[];
+const barrelFlashes=[];
+const barrelRestZ=-3.5; // barrel tip resting Z position
+
+for(let i=0;i<4;i++){
+  const bp=barrelPositions[i];
+  const bGroup=new THREE.Group();
+
+  // Main barrel tube
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.18,5.5,8),barrelMat);
+  tube.rotation.x=Math.PI/2;tube.position.set(0,0,-2.8);bGroup.add(tube);
+
+  // Flash suppressor at tip
+  const tipMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.15,0.5,8),tipMat);
+  tip.rotation.x=Math.PI/2;tip.position.set(0,0,-5.6);bGroup.add(tip);
+
+  // Barrel jacket/sleeve near breach
+  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,1.2,8),barrelMat);
+  sleeve.rotation.x=Math.PI/2;sleeve.position.set(0,0,-0.2);bGroup.add(sleeve);
+
+  bGroup.position.set(bp.x,bp.y,-1.6);
+  cannonPivot.add(bGroup);
+  barrels.push({group:bGroup,restZ:-1.6,recoil:0});
+
+  // Muzzle flash (hidden by default)
+  const flashGeo=new THREE.SphereGeometry(0.5,6,6);
+  const flashMat=new THREE.MeshBasicMaterial({color:0xffaa00,transparent:true,opacity:0});
+  const flash=new THREE.Mesh(flashGeo,flashMat);
+  flash.position.set(bp.x,bp.y,-7.4);
+  cannonPivot.add(flash);
+  barrelFlashes.push(flash);
+}
+
+// Ammo feed mechanism between barrel pairs
+const feedMat=new THREE.MeshLambertMaterial({color:0x444444});
+const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.2,1.5),feedMat);
+feedL.position.set(-0.55,0.35,0.8);cannonPivot.add(feedL);
+const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.2,1.5),feedMat);
+feedR.position.set(0.55,0.35,0.8);cannonPivot.add(feedR);
+
+// Seat/shoulder rests on sides (gunner positions)
+const seatMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
+const seatL=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.6,1.2),seatMat);
+seatL.position.set(-2.6,-0.3,0.5);cannonPivot.add(seatL);
+const seatR=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.6,1.2),seatMat);
+seatR.position.set(2.6,-0.3,0.5);cannonPivot.add(seatR);
+
+cannonPivot.position.y=2;
 cannonGroup.add(cannonPivot);
-// Attach cannon to camera so it's always visible at bottom of screen
-cannonGroup.position.set(0,-3,-4);
+cannonGroup.position.set(0,-4,-5);
 camera.add(cannonGroup);
 scene.add(camera);
+
+// ---- Auto-fire state ----
+let mouseDown=false,currentBarrel=0,fireTimer=0;
+const FIRE_INTERVAL=1/8; // ~2 rounds/sec total = 8 barrel-fires/sec? No: 2 rounds/sec = 0.5s per round, 4 barrels cycling = 0.125s per barrel
+// Actually: "~2 rounds per second total" means 2 shells/sec, so interval = 0.5s
+// But with 4 barrels cycling, each barrel fires every 2s, and we get a shot every 0.5s
+const FIRE_RATE=0.5; // seconds between shots (2 rounds/sec total)
 
 // ---- Game State (Fix #5: no waves, lives, game over) ----
 let score=0,gameActive=false;
@@ -246,6 +304,28 @@ function spawnPlane(){
 // ---- Shell ----
 function fireShell(){
   playCannonFire();
+
+  // Fire from current barrel
+  const bi=currentBarrel;
+  currentBarrel=(currentBarrel+1)%4;
+
+  // Barrel recoil
+  barrels[bi].recoil=0.6;
+
+  // Muzzle flash on this barrel
+  barrelFlashes[bi].material.opacity=1;
+  setTimeout(()=>{barrelFlashes[bi].material.opacity=0},60);
+
+  // Muzzle flash light
+  const bp=barrelPositions[bi];
+  const flashLight=new THREE.PointLight(0xffaa00,4,20);
+  // Position in world space near barrel tip
+  const worldPos=new THREE.Vector3();
+  barrelFlashes[bi].getWorldPosition(worldPos);
+  flashLight.position.copy(worldPos);
+  scene.add(flashLight);
+  setTimeout(()=>scene.remove(flashLight),80);
+
   const dir=new THREE.Vector3(0,0,-1);
   dir.applyQuaternion(camera.quaternion);
   dir.normalize();
@@ -253,9 +333,6 @@ function fireShell(){
   mesh.position.copy(camera.position).add(new THREE.Vector3(0,-1,0));
   scene.add(mesh);
   shells.push({mesh,dir,speed:SHELL_SPEED,traveled:0});
-  const flash=new THREE.PointLight(0xffaa00,3,30);
-  flash.position.copy(mesh.position);scene.add(flash);
-  setTimeout(()=>scene.remove(flash),80);
 }
 
 // ---- Flak Burst (Fix #6: black/grey puffs that linger) ----
@@ -344,7 +421,10 @@ document.addEventListener('mousemove',e=>{
   aimPitch=Math.max(.05,Math.min(1.4,aimPitch));
 });
 document.addEventListener('mousedown',e=>{
-  if(e.button===0&&gameActive)fireShell();
+  if(e.button===0&&gameActive){fireShell();mouseDown=true;fireTimer=0;}
+});
+document.addEventListener('mouseup',e=>{
+  if(e.button===0)mouseDown=false;
 });
 document.addEventListener('contextmenu',e=>e.preventDefault());
 
@@ -362,6 +442,26 @@ function update(time){
 
   // Cannon is attached to camera, just tilt barrel slightly with pitch
   cannonPivot.rotation.set(0,0,0);
+
+  // Auto-fire while holding mouse
+  if(mouseDown){
+    fireTimer+=dt;
+    while(fireTimer>=FIRE_RATE){
+      fireTimer-=FIRE_RATE;
+      fireShell();
+    }
+  }
+
+  // Barrel recoil animation
+  for(let i=0;i<4;i++){
+    const b=barrels[i];
+    if(b.recoil>0){
+      b.recoil=Math.max(0,b.recoil-dt*4);
+      b.group.position.z=b.restZ+b.recoil*0.4;
+    }else{
+      b.group.position.z=b.restZ;
+    }
+  }
 
   // Spawn planes continuously (Fix #5: no waves, just endless)
   spawnTimer+=dt;
