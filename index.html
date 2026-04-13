@@ -169,7 +169,7 @@ renderer.setClearColor(0x1a1a4e);
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMapping=THREE.NoToneMapping;
 renderer.toneMappingExposure=1.1;
 document.body.appendChild(renderer.domElement);
 
@@ -178,9 +178,9 @@ function createSky(){
   const c=document.createElement('canvas');c.width=512;c.height=512;
   const ctx=c.getContext('2d');
   const grd=ctx.createLinearGradient(0,0,0,512);
-  grd.addColorStop(0,'#0b0b2a');
-  grd.addColorStop(0.25,'#1b1b4e');
-  grd.addColorStop(0.45,'#4a2060');
+  grd.addColorStop(0,'#2a3a6a');
+  grd.addColorStop(0.25,'#3a4a7e');
+  grd.addColorStop(0.45,'#6a3070');
   grd.addColorStop(0.6,'#c84b31');
   grd.addColorStop(0.72,'#f4a261');
   grd.addColorStop(0.85,'#e9c46a');
@@ -237,26 +237,22 @@ const mountMat=new THREE.MeshLambertMaterial({color:0x505050});
 const mount=new THREE.Mesh(new THREE.BoxGeometry(6,3.2,5),mountMat);
 mount.position.set(0,0,0.5);cannonPivot.add(mount);
 
-// Armored shield - front plate with barrel cutouts (solid plate, barrels poke through)
+// Armored shield - side plates only (player sits in the middle, looking through the sight)
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
-const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(7,3.5,0.3),shieldMat);
-shieldFront.position.set(0,0,-2);cannonPivot.add(shieldFront);
-// Shield side plates
-const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.3,3.5,5.5),shieldMat);
-shieldL.position.set(-3.5,0,0.5);cannonPivot.add(shieldL);
-const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.3,3.5,5.5),shieldMat);
-shieldR.position.set(3.5,0,0.5);cannonPivot.add(shieldR);
-// Shield top plate
-const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(7,0.25,5.5),shieldMat);
-shieldTop.position.set(0,1.7,0.5);cannonPivot.add(shieldTop);
+// Left shield plate (around left barrel pair)
+const shieldL=new THREE.Mesh(new THREE.BoxGeometry(4,3.5,5.5),shieldMat);
+shieldL.position.set(-11.5,0,0.5);cannonPivot.add(shieldL);
+// Right shield plate (around right barrel pair)
+const shieldR=new THREE.Mesh(new THREE.BoxGeometry(4,3.5,5.5),shieldMat);
+shieldR.position.set(11.5,0,0.5);cannonPivot.add(shieldR);
 
 // Four barrels in 2x2 grid — WIDE separation so they're clearly four distinct tubes
 const barrelMat=new THREE.MeshLambertMaterial({color:0x555555});
 const barrelPositions=[
-  {x:-3.8,y:1.0},   // left-top
-  {x:-3.8,y:-0.4},  // left-bottom
-  {x:3.8,y:1.0},    // right-top
-  {x:3.8,y:-0.4},   // right-bottom
+  {x:-10,y:0.6},   // left-top
+  {x:-10,y:-0.8},  // left-bottom
+  {x:10,y:0.6},    // right-top
+  {x:10,y:-0.8},   // right-bottom
 ];
 const barrels=[];
 const barrelFlashes=[];
@@ -335,16 +331,16 @@ bead.position.set(0,sightY,sightZ);cannonPivot.add(bead);
 // Ammo feed boxes on sides
 const feedMat=new THREE.MeshLambertMaterial({color:0x444444});
 const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.8,2.5),feedMat);
-feedL.position.set(-1.5,0,1.5);cannonPivot.add(feedL);
+feedL.position.set(-8,0,1.5);cannonPivot.add(feedL);
 const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.8,2.5),feedMat);
-feedR.position.set(1.5,0,1.5);cannonPivot.add(feedR);
+feedR.position.set(8,0,1.5);cannonPivot.add(feedR);
 
 // Gunner seats
 const seatMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
 const seatL2=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,1.5),seatMat);
-seatL2.position.set(-4,-0.6,0.5);cannonPivot.add(seatL2);
+seatL2.position.set(-9,-0.6,0.5);cannonPivot.add(seatL2);
 const seatR2=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,1.5),seatMat);
-seatR2.position.set(4,-0.6,0.5);cannonPivot.add(seatR2);
+seatR2.position.set(9,-0.6,0.5);cannonPivot.add(seatR2);
 
 cannonPivot.position.y=2.5;
 cannonGroup.add(cannonPivot);
