@@ -203,7 +203,7 @@ scene.add(camera);
 let score=0,gameActive=false;
 const shells=[],planes=[],flakPuffs=[],debris=[];
 let aimPitch=0.3,aimYaw=0;
-const SHELL_SPEED=280,HIT_RADIUS=22;
+const SHELL_SPEED=280,HIT_RADIUS=35;
 let spawnTimer=0,spawnInterval=1.8;
 let mouseX=0,mouseY=0;
 
@@ -246,25 +246,13 @@ function spawnPlane(){
 // ---- Shell ----
 function fireShell(){
   playCannonFire();
-  // Get the actual camera look direction
   const dir=new THREE.Vector3(0,0,-1);
   dir.applyQuaternion(camera.quaternion);
   dir.normalize();
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(.3,4,4),new THREE.MeshBasicMaterial({color:0xffcc00}));
   mesh.position.copy(camera.position).add(new THREE.Vector3(0,-1,0));
   scene.add(mesh);
-  // Find nearest plane along aim direction to set fuse distance
-  let bestDist=300;
-  planes.forEach(p=>{
-    const toPlane=p.mesh.position.clone().sub(mesh.position);
-    const dot=toPlane.dot(dir);
-    if(dot>0){
-      const proj=dir.clone().multiplyScalar(dot);
-      const miss=toPlane.clone().sub(proj).length();
-      if(miss<HIT_RADIUS*2&&dot<bestDist)bestDist=dot;
-    }
-  });
-  shells.push({mesh,dir,speed:SHELL_SPEED,fuseDist:bestDist,traveled:0});
+  shells.push({mesh,dir,speed:SHELL_SPEED,traveled:0});
   const flash=new THREE.PointLight(0xffaa00,3,30);
   flash.position.copy(mesh.position);scene.add(flash);
   setTimeout(()=>scene.remove(flash),80);
@@ -389,16 +377,16 @@ function update(time){
     const s=shells[i];
     s.mesh.position.addScaledVector(s.dir,s.speed*dt);
     s.traveled+=s.speed*dt;
-    if(s.traveled>=s.fuseDist||s.traveled>600){
-      const shellPos=s.mesh.position.clone();
-      createFlakBurst(shellPos);
-      // Hit detection (Fix #3)
-      let hitLog=[];
+    // Check proximity to planes every frame
+    let hitPlane=false;
+    if(s.traveled>30){
       for(let j=planes.length-1;j>=0;j--){
         const p=planes[j];
-        const dist=p.mesh.position.distanceTo(shellPos);
-        hitLog.push({dist:Math.round(dist),py:Math.round(p.mesh.position.y),sy:Math.round(shellPos.y)});
+        const dist=p.mesh.position.distanceTo(s.mesh.position);
         if(dist<HIT_RADIUS){
+          // Proximity fuse - explode near plane
+          const shellPos=s.mesh.position.clone();
+          createFlakBurst(shellPos);
           p.hp--;
           if(p.hp<=0){
             score++;
@@ -406,10 +394,14 @@ function update(time){
             explodePlane(p.mesh.position.clone());
             scene.remove(p.mesh);planes.splice(j,1);
           }
+          scene.remove(s.mesh);shells.splice(i,1);
+          hitPlane=true;
+          break;
         }
       }
-      window._lastHitLog=hitLog;
-      window._lastShellPos={x:Math.round(shellPos.x),y:Math.round(shellPos.y),z:Math.round(shellPos.z),fuse:Math.round(s.fuseDist),traveled:Math.round(s.traveled)};
+    }
+    if(!hitPlane&&s.traveled>600){
+      createFlakBurst(s.mesh.position.clone());
       scene.remove(s.mesh);shells.splice(i,1);
     }
   }
