@@ -241,18 +241,18 @@ mount.position.set(0,0,0.5);cannonPivot.add(mount);
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
 // Left shield plate (around left barrel pair)
 const shieldL=new THREE.Mesh(new THREE.BoxGeometry(4,3.5,5.5),shieldMat);
-shieldL.position.set(-11.5,0,0.5);cannonPivot.add(shieldL);
+shieldL.position.set(-15.5,0,0.5);cannonPivot.add(shieldL);
 // Right shield plate (around right barrel pair)
 const shieldR=new THREE.Mesh(new THREE.BoxGeometry(4,3.5,5.5),shieldMat);
-shieldR.position.set(11.5,0,0.5);cannonPivot.add(shieldR);
+shieldR.position.set(15.5,0,0.5);cannonPivot.add(shieldR);
 
 // Four barrels in 2x2 grid — WIDE separation so they're clearly four distinct tubes
 const barrelMat=new THREE.MeshLambertMaterial({color:0x555555});
 const barrelPositions=[
-  {x:-10,y:0.6},   // left-top
-  {x:-10,y:-0.8},  // left-bottom
-  {x:10,y:0.6},    // right-top
-  {x:10,y:-0.8},   // right-bottom
+  {x:-14,y:0.6},   // left-top
+  {x:-14,y:-0.8},  // left-bottom
+  {x:14,y:0.6},    // right-top
+  {x:14,y:-0.8},   // right-bottom
 ];
 const barrels=[];
 const barrelFlashes=[];
@@ -331,16 +331,16 @@ bead.position.set(0,sightY,sightZ);cannonPivot.add(bead);
 // Ammo feed boxes on sides
 const feedMat=new THREE.MeshLambertMaterial({color:0x444444});
 const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.8,2.5),feedMat);
-feedL.position.set(-8,0,1.5);cannonPivot.add(feedL);
+feedL.position.set(-12,0,1.5);cannonPivot.add(feedL);
 const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.8,2.5),feedMat);
-feedR.position.set(8,0,1.5);cannonPivot.add(feedR);
+feedR.position.set(12,0,1.5);cannonPivot.add(feedR);
 
 // Gunner seats
 const seatMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
 const seatL2=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,1.5),seatMat);
-seatL2.position.set(-9,-0.6,0.5);cannonPivot.add(seatL2);
+seatL2.position.set(-13,-0.6,0.5);cannonPivot.add(seatL2);
 const seatR2=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,1.5),seatMat);
-seatR2.position.set(9,-0.6,0.5);cannonPivot.add(seatR2);
+seatR2.position.set(13,-0.6,0.5);cannonPivot.add(seatR2);
 
 cannonPivot.position.y=2.5;
 cannonGroup.add(cannonPivot);
@@ -477,13 +477,13 @@ function spawnFormationPlane(p){
 // ---- Plane factory ----
 function createPlane(){
   const g=new THREE.Group();
-  const body=new THREE.Mesh(new THREE.BoxGeometry(2,1,8),new THREE.MeshLambertMaterial({color:0x556655}));
+  const body=new THREE.Mesh(new THREE.BoxGeometry(2,1,8),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
   g.add(body);
-  const wing=new THREE.Mesh(new THREE.BoxGeometry(16,.2,3),new THREE.MeshLambertMaterial({color:0x667766}));
+  const wing=new THREE.Mesh(new THREE.BoxGeometry(16,.2,3),new THREE.MeshLambertMaterial({color:0x404040}));
   wing.position.y=.2;g.add(wing);
-  const tail=new THREE.Mesh(new THREE.BoxGeometry(5,.15,1.5),new THREE.MeshLambertMaterial({color:0x667766}));
+  const tail=new THREE.Mesh(new THREE.BoxGeometry(5,.15,1.5),new THREE.MeshLambertMaterial({color:0x404040}));
   tail.position.set(0,.3,-3.5);g.add(tail);
-  const vTail=new THREE.Mesh(new THREE.BoxGeometry(.2,3,2),new THREE.MeshLambertMaterial({color:0x556655}));
+  const vTail=new THREE.Mesh(new THREE.BoxGeometry(.2,3,2),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
   vTail.position.set(0,1.5,-3.5);g.add(vTail);
   for(let s of[-4,4]){
     const eng=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,2,6),new THREE.MeshLambertMaterial({color:0x444444}));
@@ -634,7 +634,7 @@ function createSplash(pos){
   for(let i=0;i<12;i++){
     const spray=new THREE.Mesh(
       new THREE.SphereGeometry(0.5+Math.random()*1.5,5,5),
-      new THREE.MeshBasicMaterial({color:0x88bbdd,transparent:true,opacity:0.7})
+      new THREE.MeshBasicMaterial({color:0x666666,transparent:true,opacity:0.7})
     );
     const angle=Math.random()*Math.PI*2;
     const speed=8+Math.random()*15;
