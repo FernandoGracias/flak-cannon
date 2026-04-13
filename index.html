@@ -163,115 +163,138 @@ function makeCloud(x,y,z){
 }
 for(let i=0;i<25;i++)makeCloud(Math.random()*1600-800,60+Math.random()*120,Math.random()*1600-800);
 
-// ---- QUAD 40mm BOFORS MOUNT (bigger, more prominent) ----
+// ---- QUAD 40mm BOFORS MOUNT ----
 const cannonGroup=new THREE.Group();
 const cannonPivot=new THREE.Group();
 
-// Base platform - heavy circular base
+// Circular rotating platform base
 const baseMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const base=new THREE.Mesh(new THREE.CylinderGeometry(4,4.8,1.8,12),baseMat);
-base.position.y=0.9;cannonGroup.add(base);
-
+const baseBottom=new THREE.Mesh(new THREE.CylinderGeometry(5.5,6,1.2,20),baseMat);
+baseBottom.position.y=0.6;cannonGroup.add(baseBottom);
+// Pedestal
+const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(4,5,2,16),new THREE.MeshLambertMaterial({color:0x444444}));
+pedestal.position.y=1.8;cannonGroup.add(pedestal);
 // Turret ring
-const ringMat=new THREE.MeshLambertMaterial({color:0x4a4a4a});
-const ring=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.5,0.8,16),ringMat);
-ring.position.y=2;cannonGroup.add(ring);
+const tRing=new THREE.Mesh(new THREE.CylinderGeometry(3.8,4,0.6,20),new THREE.MeshLambertMaterial({color:0x4a4a4a}));
+tRing.position.y=2.9;cannonGroup.add(tRing);
 
-// Main turret housing
+// Main turret housing - chunky rectangular body
 const mountMat=new THREE.MeshLambertMaterial({color:0x505050});
-const mount=new THREE.Mesh(new THREE.BoxGeometry(5,2.8,4),mountMat);
-mount.position.set(0,0.2,0);cannonPivot.add(mount);
+const mount=new THREE.Mesh(new THREE.BoxGeometry(6,3.2,5),mountMat);
+mount.position.set(0,0,0.5);cannonPivot.add(mount);
 
-// Armored shield - front plate
+// Armored shield - front plate with barrel cutouts (solid plate, barrels poke through)
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
-const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(5.5,3.8,0.25),shieldMat);
-shieldFront.position.set(0,0.4,-2.2);cannonPivot.add(shieldFront);
-
+const shieldFront=new THREE.Mesh(new THREE.BoxGeometry(7,4.5,0.3),shieldMat);
+shieldFront.position.set(0,0.5,-2);cannonPivot.add(shieldFront);
 // Shield side plates
-const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.25,3.8,4.5),shieldMat);
-shieldL.position.set(-2.75,0.4,0);cannonPivot.add(shieldL);
-const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.25,3.8,4.5),shieldMat);
-shieldR.position.set(2.75,0.4,0);cannonPivot.add(shieldR);
-
+const shieldL=new THREE.Mesh(new THREE.BoxGeometry(0.3,4.5,5.5),shieldMat);
+shieldL.position.set(-3.5,0.5,0.5);cannonPivot.add(shieldL);
+const shieldR=new THREE.Mesh(new THREE.BoxGeometry(0.3,4.5,5.5),shieldMat);
+shieldR.position.set(3.5,0.5,0.5);cannonPivot.add(shieldR);
 // Shield top plate
-const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(5.5,0.2,4.5),shieldMat);
-shieldTop.position.set(0,2.3,0);cannonPivot.add(shieldTop);
+const shieldTop=new THREE.Mesh(new THREE.BoxGeometry(7,0.25,5.5),shieldMat);
+shieldTop.position.set(0,2.7,0.5);cannonPivot.add(shieldTop);
 
-// Four barrels in 2x2 grid with WIDE separation
+// Four barrels in 2x2 grid — WIDE separation so they're clearly four distinct tubes
 const barrelMat=new THREE.MeshLambertMaterial({color:0x606060});
 const barrelPositions=[
-  {x:-0.8,y:1.1},   // top-left
-  {x:0.8,y:1.1},    // top-right
-  {x:-0.8,y:-0.2},  // bottom-left
-  {x:0.8,y:-0.2},   // bottom-right
+  {x:-1.1,y:1.2},   // top-left
+  {x:1.1,y:1.2},    // top-right
+  {x:-1.1,y:-0.3},  // bottom-left
+  {x:1.1,y:-0.3},   // bottom-right
 ];
 const barrels=[];
 const barrelFlashes=[];
-const barrelRestZ=-2.2;
+const barrelRestZ=-2;
 
 for(let i=0;i<4;i++){
   const bp=barrelPositions[i];
   const bGroup=new THREE.Group();
 
-  // Main barrel tube - long cylinder
-  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,7,8),barrelMat);
-  tube.rotation.x=Math.PI/2;tube.position.set(0,0,-3.5);bGroup.add(tube);
+  // Main barrel tube — long thin cylinder (40mm barrel ~2.4m scaled up)
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.22,8,8),barrelMat);
+  tube.rotation.x=Math.PI/2;tube.position.set(0,0,-4);bGroup.add(tube);
 
-  // Flash suppressor at tip
-  const tipMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.2,0.6,8),tipMat);
-  tip.rotation.x=Math.PI/2;tip.position.set(0,0,-7.1);bGroup.add(tip);
+  // Flash suppressor at muzzle
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.18,0.7,8),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
+  tip.rotation.x=Math.PI/2;tip.position.set(0,0,-8.2);bGroup.add(tip);
 
-  // Barrel jacket near breach
-  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,1.5,8),barrelMat);
-  sleeve.rotation.x=Math.PI/2;sleeve.position.set(0,0,-0.3);bGroup.add(sleeve);
+  // Barrel jacket/sleeve near breech
+  const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,1.8,8),barrelMat);
+  sleeve.rotation.x=Math.PI/2;sleeve.position.set(0,0,-0.2);bGroup.add(sleeve);
 
   bGroup.position.set(bp.x,bp.y,barrelRestZ);
   cannonPivot.add(bGroup);
   barrels.push({group:bGroup,restZ:barrelRestZ,recoil:0});
 
-  // Muzzle flash
-  const flashGeo=new THREE.SphereGeometry(0.6,6,6);
-  const flashMat2=new THREE.MeshBasicMaterial({color:0xffaa00,transparent:true,opacity:0});
-  const flash=new THREE.Mesh(flashGeo,flashMat2);
-  flash.position.set(bp.x,bp.y,barrelRestZ-7.6);
+  // Muzzle flash per barrel
+  const flash=new THREE.Mesh(new THREE.SphereGeometry(0.7,6,6),new THREE.MeshBasicMaterial({color:0xffaa00,transparent:true,opacity:0}));
+  flash.position.set(bp.x,bp.y,barrelRestZ-8.8);
   cannonPivot.add(flash);
   barrelFlashes.push(flash);
 }
 
-// Iron sight / ring sight on top of the gun
-const sightMat=new THREE.MeshLambertMaterial({color:0x333333});
-// Sight post - vertical bar
-const sightPost=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.8,0.1),sightMat);
-sightPost.position.set(0,2.7,-4);cannonPivot.add(sightPost);
-// Ring sight - a ring the player looks through
-const ringGeo=new THREE.TorusGeometry(0.5,0.04,8,16);
-const ringSight=new THREE.Mesh(ringGeo,sightMat);
-ringSight.position.set(0,3.1,-4);cannonPivot.add(ringSight);
-// Small front bead
-const bead=new THREE.Mesh(new THREE.SphereGeometry(0.06,6,6),new THREE.MeshBasicMaterial({color:0xff4400}));
-bead.position.set(0,3.6,-6);cannonPivot.add(bead);
-// Front sight post
-const frontPost=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.6,0.08),sightMat);
-frontPost.position.set(0,3.3,-6);cannonPivot.add(frontPost);
+// ---- Spider Web Ring Sight (WW2 Bofors) ----
+// Triangular frame posts rising from between the barrels
+const sightWireMat=new THREE.MeshBasicMaterial({color:0x222222});
+const sightLineMat=new THREE.LineBasicMaterial({color:0x222222,transparent:true,opacity:0.7});
+const sightZ=-6;
+const sightY=3.2;
+const sightR=1.4; // outer ring radius
 
-// Ammo feed mechanism
+// Support posts — thin triangular frame
+const postGeo=new THREE.CylinderGeometry(0.04,0.04,2.8,4);
+const postL=new THREE.Mesh(postGeo,sightWireMat);
+postL.position.set(-0.6,1.8,sightZ);cannonPivot.add(postL);
+const postR=new THREE.Mesh(postGeo,sightWireMat);
+postR.position.set(0.6,1.8,sightZ);cannonPivot.add(postR);
+// Cross brace
+const brace=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,4),sightWireMat);
+brace.rotation.z=Math.PI/2;brace.position.set(0,2.6,sightZ);cannonPivot.add(brace);
+
+// Concentric rings (outer ring + 3 inner rings)
+const ringRadii=[sightR, sightR*0.7, sightR*0.45, sightR*0.2];
+for(const r of ringRadii){
+  const ringTorus=new THREE.Mesh(new THREE.TorusGeometry(r,0.02,6,32),sightWireMat);
+  ringTorus.position.set(0,sightY,sightZ);
+  cannonPivot.add(ringTorus);
+}
+
+// Radial spokes — 12 lines from center to outer ring
+const spokeCount=12;
+for(let i=0;i<spokeCount;i++){
+  const angle=(i/spokeCount)*Math.PI*2;
+  const pts=[
+    new THREE.Vector3(0,sightY,sightZ),
+    new THREE.Vector3(Math.cos(angle)*sightR,sightY+Math.sin(angle)*sightR,sightZ)
+  ];
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  const spoke=new THREE.Line(geo,sightLineMat);
+  cannonPivot.add(spoke);
+}
+
+// Center bead
+const bead=new THREE.Mesh(new THREE.SphereGeometry(0.05,6,6),new THREE.MeshBasicMaterial({color:0xff3300}));
+bead.position.set(0,sightY,sightZ);cannonPivot.add(bead);
+
+// Ammo feed boxes on sides
 const feedMat=new THREE.MeshLambertMaterial({color:0x444444});
-const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,2),feedMat);
-feedL.position.set(-0.8,0.4,1);cannonPivot.add(feedL);
-const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,2),feedMat);
-feedR.position.set(0.8,0.4,1);cannonPivot.add(feedR);
+const feedL=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.8,2.5),feedMat);
+feedL.position.set(-1.5,0,1.5);cannonPivot.add(feedL);
+const feedR=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.8,2.5),feedMat);
+feedR.position.set(1.5,0,1.5);cannonPivot.add(feedR);
 
 // Gunner seats
 const seatMat=new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const seatL=new THREE.Mesh(new THREE.BoxGeometry(1,0.8,1.5),seatMat);
-seatL.position.set(-3.5,-0.4,0.5);cannonPivot.add(seatL);
-const seatR=new THREE.Mesh(new THREE.BoxGeometry(1,0.8,1.5),seatMat);
-seatR.position.set(3.5,-0.4,0.5);cannonPivot.add(seatR);
+const seatL2=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,1.5),seatMat);
+seatL2.position.set(-4,-0.6,0.5);cannonPivot.add(seatL2);
+const seatR2=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,1.5),seatMat);
+seatR2.position.set(4,-0.6,0.5);cannonPivot.add(seatR2);
 
 cannonPivot.position.y=2.5;
 cannonGroup.add(cannonPivot);
-cannonGroup.position.set(0,-5.5,-6);
+cannonGroup.position.set(0,-4.5,-5);
 camera.add(cannonGroup);
 scene.add(camera);
 
