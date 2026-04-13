@@ -246,9 +246,9 @@ function spawnPlane(){
 // ---- Shell ----
 function fireShell(){
   playCannonFire();
+  // Get the actual camera look direction
   const dir=new THREE.Vector3(0,0,-1);
-  dir.applyAxisAngle(new THREE.Vector3(1,0,0),-aimPitch);
-  dir.applyAxisAngle(new THREE.Vector3(0,1,0),-aimYaw);
+  dir.applyQuaternion(camera.quaternion);
   dir.normalize();
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(.3,4,4),new THREE.MeshBasicMaterial({color:0xffcc00}));
   mesh.position.copy(camera.position).add(new THREE.Vector3(0,-1,0));
