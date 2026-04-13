@@ -13,12 +13,12 @@ canvas{display:block}
 #score{font-size:28px;font-weight:bold}
 #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10}
 #crosshair div{position:absolute;background:rgba(255,255,255,.8)}
-#ch-t{width:2px;height:18px;left:-1px;top:-28px}
-#ch-b{width:2px;height:18px;left:-1px;top:10px}
-#ch-l{width:18px;height:2px;top:-1px;left:-28px}
-#ch-r{width:18px;height:2px;top:-1px;left:10px}
-#ch-dot{width:4px;height:4px;border-radius:50%;left:-2px;top:-2px;background:rgba(255,80,80,.9)}
-#ch-ring{width:20px;height:20px;border:1px solid rgba(255,255,255,.3);border-radius:50%;left:-10px;top:-10px;background:transparent}
+#ch-t{width:2px;height:20px;left:-1px;top:-30px}
+#ch-b{width:2px;height:20px;left:-1px;top:10px}
+#ch-l{width:20px;height:2px;top:-1px;left:-30px}
+#ch-r{width:20px;height:2px;top:-1px;left:10px}
+#ch-dot{width:6px;height:6px;border-radius:50%;left:-3px;top:-3px;background:rgba(255,80,80,.9)}
+#ch-ring{width:24px;height:24px;border:2px solid rgba(255,255,255,.4);border-radius:50%;left:-12px;top:-12px;background:transparent}
 #start-screen{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;cursor:pointer}
 #start-screen h1{font-size:64px;color:#fc0;text-shadow:0 0 30px #f80,0 0 60px #f40;margin-bottom:10px}
 #start-screen p{font-size:22px;color:#ccc;margin-bottom:30px}
@@ -194,8 +194,10 @@ shieldR.position.set(0.9,0.5,-0.5);cannonPivot.add(shieldR);
 
 cannonPivot.position.y=1.7;
 cannonGroup.add(cannonPivot);
-cannonGroup.position.set(0,0,0);
-scene.add(cannonGroup);
+// Attach cannon to camera so it's always visible at bottom of screen
+cannonGroup.position.set(0,-3,-4);
+camera.add(cannonGroup);
+scene.add(camera);
 
 // ---- Game State (Fix #5: no waves, lives, game over) ----
 let score=0,gameActive=false;
@@ -361,10 +363,8 @@ function update(time){
   camera.rotateY(-aimYaw);
   camera.rotateX(aimPitch);
 
-  // Cannon follows aim (Fix #1)
+  // Cannon is attached to camera, just tilt barrel slightly with pitch
   cannonPivot.rotation.set(0,0,0);
-  cannonPivot.rotation.y=-aimYaw;
-  cannonPivot.rotation.x=Math.min(0,-aimPitch+0.3);
 
   // Spawn planes continuously (Fix #5: no waves, just endless)
   spawnTimer+=dt;
