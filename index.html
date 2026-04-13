@@ -451,6 +451,9 @@ function startGame(){
   try{renderer.domElement.requestPointerLock();}catch(e){}
 }
 window._startGame=startGame;
+window._debug=()=>({planes:planes.length,shells:shells.length,score,aimPitch,aimYaw,
+  planePositions:planes.slice(0,3).map(p=>({x:Math.round(p.mesh.position.x),y:Math.round(p.mesh.position.y),z:Math.round(p.mesh.position.z)}))
+});
 
 document.getElementById('start-screen').addEventListener('click',()=>{
   initAudio();
