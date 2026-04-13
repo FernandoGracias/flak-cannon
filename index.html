@@ -49,57 +49,115 @@ const AudioCtx=window.AudioContext||window.webkitAudioContext;
 let actx;
 function initAudio(){if(!actx)actx=new AudioCtx()}
 
+// Master volume for all sounds
+const MASTER_VOL=0.35;
+
+// Utility: create filtered noise buffer
+function noiseBuf(dur,decay,curve){
+  const len=Math.floor(actx.sampleRate*dur);
+  const buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++){
+    const t=i/len;
+    d[i]=(Math.random()*2-1)*Math.pow(1-t,curve||1.5);
+  }
+  return buf;
+}
+
 function playCannonFire(){
   if(!actx)return;
   const t=actx.currentTime;
-  const osc=actx.createOscillator(),g=actx.createGain();
-  osc.type='sine';osc.frequency.setValueAtTime(60,t);osc.frequency.exponentialRampToValueAtTime(20,t+0.4);
-  g.gain.setValueAtTime(0.6,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
-  osc.connect(g);g.connect(actx.destination);osc.start(t);osc.stop(t+0.4);
-  const buf=actx.createBuffer(1,actx.sampleRate*0.15,actx.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
-  const src=actx.createBufferSource(),gn=actx.createGain();
-  src.buffer=buf;gn.gain.setValueAtTime(0.4,t);gn.gain.exponentialRampToValueAtTime(0.001,t+0.15);
-  src.connect(gn);gn.connect(actx.destination);src.start(t);
+  const master=actx.createGain();
+  master.gain.value=MASTER_VOL;master.connect(actx.destination);
+
+  // Low-frequency thump body (filtered noise, not oscillator)
+  const thumpBuf=noiseBuf(0.5,1,1.2);
+  const thump=actx.createBufferSource();thump.buffer=thumpBuf;
+  const thumpLP=actx.createBiquadFilter();thumpLP.type='lowpass';thumpLP.frequency.setValueAtTime(120,t);thumpLP.frequency.exponentialRampToValueAtTime(40,t+0.4);thumpLP.Q.value=1.2;
+  const thumpG=actx.createGain();thumpG.gain.setValueAtTime(1.0,t);thumpG.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+  thump.connect(thumpLP);thumpLP.connect(thumpG);thumpG.connect(master);thump.start(t);
+
+  // Mid-frequency punch (bandpass noise for the "crack" body)
+  const punchBuf=noiseBuf(0.2,1,3);
+  const punch=actx.createBufferSource();punch.buffer=punchBuf;
+  const punchBP=actx.createBiquadFilter();punchBP.type='bandpass';punchBP.frequency.value=400;punchBP.Q.value=0.8;
+  const punchG=actx.createGain();punchG.gain.setValueAtTime(0.5,t);punchG.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+  punch.connect(punchBP);punchBP.connect(punchG);punchG.connect(master);punch.start(t);
+
+  // High transient click (very short noise burst for attack)
+  const clickBuf=noiseBuf(0.03,1,6);
+  const click=actx.createBufferSource();click.buffer=clickBuf;
+  const clickHP=actx.createBiquadFilter();clickHP.type='highpass';clickHP.frequency.value=800;
+  const clickG=actx.createGain();clickG.gain.setValueAtTime(0.3,t);clickG.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+  click.connect(clickHP);clickHP.connect(clickG);clickG.connect(master);click.start(t);
 }
 
 function playShellExplode(){
   if(!actx)return;
   const t=actx.currentTime;
-  const buf=actx.createBuffer(1,actx.sampleRate*0.08,actx.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,5);
-  const src=actx.createBufferSource(),g=actx.createGain();
-  src.buffer=buf;g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
-  src.connect(g);g.connect(actx.destination);src.start(t);
-  const buf2=actx.createBuffer(1,actx.sampleRate*0.6,actx.sampleRate),d2=buf2.getChannelData(0);
-  for(let i=0;i<d2.length;i++)d2[i]=(Math.random()*2-1)*0.15*Math.pow(1-i/d2.length,2);
-  const src2=actx.createBufferSource(),g2=actx.createGain();
-  src2.buffer=buf2;g2.gain.setValueAtTime(0.15,t+0.05);g2.gain.exponentialRampToValueAtTime(0.001,t+0.6);
-  src2.connect(g2);g2.connect(actx.destination);src2.start(t+0.05);
+  const master=actx.createGain();
+  master.gain.value=MASTER_VOL*0.5;master.connect(actx.destination);
+
+  // Distant muffled pop (bandpass filtered noise)
+  const popBuf=noiseBuf(0.25,1,2.5);
+  const pop=actx.createBufferSource();pop.buffer=popBuf;
+  const popBP=actx.createBiquadFilter();popBP.type='bandpass';popBP.frequency.value=600;popBP.Q.value=0.6;
+  const popG=actx.createGain();popG.gain.setValueAtTime(0.6,t);popG.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+  pop.connect(popBP);popBP.connect(popG);popG.connect(master);pop.start(t);
+
+  // Distant echo/reverb tail (low-passed noise, delayed)
+  const tailBuf=noiseBuf(0.4,1,1.0);
+  const tail=actx.createBufferSource();tail.buffer=tailBuf;
+  const tailLP=actx.createBiquadFilter();tailLP.type='lowpass';tailLP.frequency.value=400;
+  const tailG=actx.createGain();tailG.gain.setValueAtTime(0.25,t+0.08);tailG.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+  tail.connect(tailLP);tailLP.connect(tailG);tailG.connect(master);tail.start(t+0.08);
 }
 
 function playPlaneExplode(){
   if(!actx)return;
   const t=actx.currentTime;
-  const buf=actx.createBuffer(1,actx.sampleRate*0.8,actx.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.2);
-  const src=actx.createBufferSource(),g=actx.createGain();
-  src.buffer=buf;g.gain.setValueAtTime(0.7,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.8);
-  src.connect(g);g.connect(actx.destination);src.start(t);
-  const osc=actx.createOscillator(),go=actx.createGain();
-  osc.type='sine';osc.frequency.setValueAtTime(40,t);osc.frequency.exponentialRampToValueAtTime(15,t+0.6);
-  go.gain.setValueAtTime(0.5,t);go.gain.exponentialRampToValueAtTime(0.001,t+0.6);
-  osc.connect(go);go.connect(actx.destination);osc.start(t);osc.stop(t+0.6);
+  const master=actx.createGain();
+  master.gain.value=MASTER_VOL*0.8;master.connect(actx.destination);
+
+  // Heavy low rumble (long filtered noise)
+  const rumbleBuf=noiseBuf(0.8,1,0.8);
+  const rumble=actx.createBufferSource();rumble.buffer=rumbleBuf;
+  const rumbleLP=actx.createBiquadFilter();rumbleLP.type='lowpass';rumbleLP.frequency.setValueAtTime(200,t);rumbleLP.frequency.exponentialRampToValueAtTime(60,t+0.7);rumbleLP.Q.value=0.8;
+  const rumbleG=actx.createGain();rumbleG.gain.setValueAtTime(0.9,t);rumbleG.gain.exponentialRampToValueAtTime(0.001,t+0.8);
+  rumble.connect(rumbleLP);rumbleLP.connect(rumbleG);rumbleG.connect(master);rumble.start(t);
+
+  // Mid crackle (bandpass noise for fire/debris sound)
+  const crackleBuf=noiseBuf(0.6,1,1.0);
+  const crackle=actx.createBufferSource();crackle.buffer=crackleBuf;
+  const crackleBP=actx.createBiquadFilter();crackleBP.type='bandpass';crackleBP.frequency.value=1200;crackleBP.Q.value=0.5;
+  const crackleG=actx.createGain();crackleG.gain.setValueAtTime(0.35,t+0.05);crackleG.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+  crackle.connect(crackleBP);crackleBP.connect(crackleG);crackleG.connect(master);crackle.start(t+0.05);
+
+  // Initial impact transient
+  const hitBuf=noiseBuf(0.08,1,5);
+  const hit=actx.createBufferSource();hit.buffer=hitBuf;
+  const hitG=actx.createGain();hitG.gain.setValueAtTime(0.6,t);hitG.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  hit.connect(hitG);hitG.connect(master);hit.start(t);
 }
 
 function playSplash(){
   if(!actx)return;
   const t=actx.currentTime;
-  const buf=actx.createBuffer(1,actx.sampleRate*0.5,actx.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3*Math.pow(1-i/d.length,1.5);
-  const src=actx.createBufferSource(),g=actx.createGain();
-  src.buffer=buf;g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
-  src.connect(g);g.connect(actx.destination);src.start(t);
+  const master=actx.createGain();
+  master.gain.value=MASTER_VOL*0.4;master.connect(actx.destination);
+
+  // Water impact — low thud + high splash
+  const splashBuf=noiseBuf(0.5,1,1.5);
+  const splash=actx.createBufferSource();splash.buffer=splashBuf;
+  const splashLP=actx.createBiquadFilter();splashLP.type='lowpass';splashLP.frequency.setValueAtTime(500,t);splashLP.frequency.exponentialRampToValueAtTime(100,t+0.4);
+  const splashG=actx.createGain();splashG.gain.setValueAtTime(0.6,t);splashG.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+  splash.connect(splashLP);splashLP.connect(splashG);splashG.connect(master);splash.start(t);
+
+  // High-frequency spray
+  const sprayBuf=noiseBuf(0.2,1,3);
+  const spray=actx.createBufferSource();spray.buffer=sprayBuf;
+  const sprayHP=actx.createBiquadFilter();sprayHP.type='highpass';sprayHP.frequency.value=2000;
+  const sprayG=actx.createGain();sprayG.gain.setValueAtTime(0.2,t);sprayG.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+  spray.connect(sprayHP);sprayHP.connect(sprayG);sprayG.connect(master);spray.start(t);
 }
 
 // ---- Engine ----
@@ -128,10 +186,6 @@ function createSky(){
   grd.addColorStop(0.85,'#e9c46a');
   grd.addColorStop(1,'#264653');
   ctx.fillStyle=grd;ctx.fillRect(0,0,512,512);
-  for(let i=0;i<300;i++){
-    const x=Math.random()*512,y=Math.random()*230,a=Math.random()*.7+.1;
-    ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fillRect(x,y,1.5,1.5);
-  }
   const tex=new THREE.CanvasTexture(c);
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(900,32,32),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide})));
 }
