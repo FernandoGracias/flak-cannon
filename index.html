@@ -286,35 +286,105 @@ const SHELL_SPEED=180,BLAST_RADIUS=22;
 const scoreEl=document.getElementById('score');
 const waveInfoEl=document.getElementById('wave-info');
 
-// ---- Raid Wave System ----
-const WAVE_TYPES=[
-  {name:'High Altitude Bombing Run',count:[5,8],alt:[160,250],speed:[20,30],pause:7},
-  {name:'Low Torpedo Run',count:[3,5],alt:[25,50],speed:[25,35],pause:6},
-  {name:'Medium Strafing Run',count:[4,6],alt:[70,130],speed:[35,55],pause:5},
-];
-let waveTimer=0,waveActive=false,waveQueue=[],wavePlanesSpawned=0,waveTotal=0;
-let waveDir=0,waveAlt=0,waveSpeed=0,waveType=null;
+// ---- Raid Wave System (tactical formations) ----
+let waveTimer=0,waveActive=false;
 let wavePause=3; // initial pause before first wave
-let waveSpawnInterval=0.6;
-let waveSpawnTimer=0;
 let waveNumber=0;
+let currentWave=null;
+let waveSpawnIndex=0;
+let waveSpawnTimer=0;
+let lastWaveAngle=Math.random()*Math.PI*2;
 
-function startNextWave(){
-  waveNumber++;
-  const type=WAVE_TYPES[Math.floor(Math.random()*WAVE_TYPES.length)];
-  waveType=type;
-  waveTotal=type.count[0]+Math.floor(Math.random()*(type.count[1]-type.count[0]+1));
-  waveDir=Math.random()*Math.PI*2;
-  waveAlt=type.alt[0]+Math.random()*(type.alt[1]-type.alt[0]);
-  waveSpeed=type.speed[0]+Math.random()*(type.speed[1]-type.speed[0]);
-  wavePlanesSpawned=0;
-  waveSpawnTimer=0;
-  waveSpawnInterval=0.4+Math.random()*0.4;
-  waveActive=true;
-  // Show wave info
-  waveInfoEl.textContent=type.name.toUpperCase()+' — Wave '+waveNumber;
-  waveInfoEl.style.opacity='1';
-  setTimeout(()=>{waveInfoEl.style.opacity='0'},3000);
+function pickDirection(){
+  lastWaveAngle+=Math.PI/2+Math.random()*Math.PI/2;
+  return lastWaveAngle;
+}
+
+function generateWave(){
+  const types=['high_bombing','low_torpedo','medium_strafing','mixed'];
+  const type=types[Math.floor(Math.random()*types.length)];
+  const angle=pickDirection();
+  const dist=550;
+  const baseX=Math.cos(angle)*dist, baseZ=Math.sin(angle)*dist;
+  const dx=-Math.cos(angle), dz=-Math.sin(angle);
+  const perpX=-dz, perpZ=dx;
+  const wave={type,planes:[]};
+  let waveName='';
+
+  if(type==='high_bombing'){
+    waveName='High Altitude Bombing Run';
+    const count=5+Math.floor(Math.random()*4);
+    const alt=180+Math.random()*80;
+    const speed=20+Math.random()*8;
+    const formation=Math.random()>0.5?'V':'line';
+    for(let i=0;i<count;i++){
+      let offX,offZ;
+      if(formation==='V'){
+        const side=i%2===0?1:-1;
+        const rank=Math.ceil(i/2);
+        offX=perpX*side*rank*18;
+        offZ=perpZ*side*rank*18+rank*12;
+      }else{
+        offX=perpX*(i-(count-1)/2)*18;
+        offZ=0;
+      }
+      wave.planes.push({x:baseX+offX+(Math.random()-0.5)*4,z:baseZ+offZ+(Math.random()-0.5)*4,
+        alt:alt+(Math.random()-0.5)*8,speed:speed+(Math.random()-0.5)*3,dx,dz,hp:3});
+    }
+  }else if(type==='low_torpedo'){
+    waveName='Low Altitude Torpedo Run';
+    const count=3+Math.floor(Math.random()*3);
+    const alt=30+Math.random()*20;
+    const speed=50+Math.random()*15;
+    for(let i=0;i<count;i++){
+      wave.planes.push({x:baseX+perpX*(i-(count-1)/2)*22+(Math.random()-0.5)*5,
+        z:baseZ+perpZ*(i-(count-1)/2)*22+(Math.random()-0.5)*5,
+        alt:alt+(Math.random()-0.5)*6,speed:speed+(Math.random()-0.5)*5,dx,dz,hp:1});
+    }
+  }else if(type==='medium_strafing'){
+    waveName='Medium Altitude Strafing Run';
+    const count=4+Math.floor(Math.random()*3);
+    const alt=70+Math.random()*50;
+    const speed=38+Math.random()*12;
+    for(let i=0;i<count;i++){
+      const pair=Math.floor(i/2);
+      const side=i%2===0?1:-1;
+      wave.planes.push({x:baseX+perpX*side*12+dx*pair*(-25)+(Math.random()-0.5)*4,
+        z:baseZ+perpZ*side*12+dz*pair*(-25)+(Math.random()-0.5)*4,
+        alt:alt+(Math.random()-0.5)*8,speed:speed+(Math.random()-0.5)*4,dx,dz,hp:2});
+    }
+  }else{
+    waveName='Mixed Formation';
+    const alt=100+Math.random()*60;
+    const bomberCount=3+Math.floor(Math.random()*2);
+    const fighterCount=2+Math.floor(Math.random()*3);
+    const bomberSpeed=22+Math.random()*6;
+    for(let i=0;i<bomberCount;i++){
+      wave.planes.push({x:baseX+perpX*(i-(bomberCount-1)/2)*20+(Math.random()-0.5)*3,
+        z:baseZ+perpZ*(i-(bomberCount-1)/2)*20+(Math.random()-0.5)*3,
+        alt:alt+(Math.random()-0.5)*6,speed:bomberSpeed+(Math.random()-0.5)*3,dx,dz,hp:3});
+    }
+    for(let i=0;i<fighterCount;i++){
+      const side=i%2===0?1:-1;
+      const rank=Math.ceil((i+1)/2);
+      wave.planes.push({x:baseX+perpX*side*rank*28+dx*(-30)+(Math.random()-0.5)*5,
+        z:baseZ+perpZ*side*rank*28+dz*(-30)+(Math.random()-0.5)*5,
+        alt:alt+(Math.random()-0.5)*10,speed:bomberSpeed+15+Math.random()*8,dx,dz,hp:1});
+    }
+  }
+  wave.name=waveName;
+  return wave;
+}
+
+function spawnFormationPlane(p){
+  const mesh=createPlane();
+  const vx=p.dx*p.speed, vz=p.dz*p.speed;
+  mesh.position.set(p.x,p.alt,p.z);
+  mesh.lookAt(p.x+vx,p.alt,p.z+vz);
+  const s=p.alt>150?0.7:p.alt>100?0.85:1;
+  mesh.scale.setScalar(s);
+  scene.add(mesh);
+  planes.push({mesh,vx,vz,alt:p.alt,speed:p.speed,hp:p.hp,maxHp:p.hp,smoking:false,smokeTrail:[]});
 }
 
 // ---- Plane factory ----
@@ -335,25 +405,7 @@ function createPlane(){
   return g;
 }
 
-function spawnWavePlane(){
-  const mesh=createPlane();
-  const alt=waveAlt+(Math.random()-0.5)*15; // small variation within wave
-  const angleVar=waveDir+(Math.random()-0.5)*0.3; // slight spread
-  const dist=450+Math.random()*150;
-  const sx=Math.cos(angleVar)*dist,sz=Math.sin(angleVar)*dist;
-  const speed=waveSpeed+(Math.random()-0.5)*5;
-  // Fly toward center area
-  const tx=(Math.random()-0.5)*80,tz=(Math.random()-0.5)*80;
-  const dx=tx-sx,dz=tz-sz,len=Math.sqrt(dx*dx+dz*dz);
-  const vx=dx/len*speed,vz=dz/len*speed;
-  mesh.position.set(sx,alt,sz);
-  mesh.lookAt(sx+vx,alt,sz+vz);
-  const s=alt>150?0.7:alt>100?0.85:1;
-  mesh.scale.setScalar(s);
-  scene.add(mesh);
-  const hp=speed<30?3:speed<45?2:1;
-  planes.push({mesh,vx,vz,alt,speed,hp,maxHp:hp,smoking:false,smokeTrail:[]});
-}
+// (Plane spawning handled by formation system above)
 
 // ---- Shell: visible traveling projectile ----
 function fireShell(){
@@ -564,22 +616,28 @@ function update(time){
     }
   }
 
-  // ---- Wave spawning system ----
-  if(!waveActive){
-    wavePause-=dt;
-    if(wavePause<=0){
-      startNextWave();
+  // ---- Wave spawning system (tactical formations) ----
+  if(currentWave){
+    waveSpawnTimer+=dt;
+    if(waveSpawnTimer>=0.3&&waveSpawnIndex<currentWave.planes.length){
+      waveSpawnTimer=0;
+      spawnFormationPlane(currentWave.planes[waveSpawnIndex]);
+      waveSpawnIndex++;
+    }
+    if(waveSpawnIndex>=currentWave.planes.length){
+      currentWave=null;
+      wavePause=5+Math.random()*5;
     }
   }else{
-    waveSpawnTimer+=dt;
-    if(waveSpawnTimer>=waveSpawnInterval&&wavePlanesSpawned<waveTotal){
+    wavePause-=dt;
+    if(wavePause<=0){
+      waveNumber++;
+      currentWave=generateWave();
+      waveSpawnIndex=0;
       waveSpawnTimer=0;
-      spawnWavePlane();
-      wavePlanesSpawned++;
-      if(wavePlanesSpawned>=waveTotal){
-        waveActive=false;
-        wavePause=5+Math.random()*5; // 5-10 second pause between waves
-      }
+      waveInfoEl.textContent=currentWave.name.toUpperCase()+' — Wave '+waveNumber;
+      waveInfoEl.style.opacity='1';
+      setTimeout(()=>{waveInfoEl.style.opacity='0'},3000);
     }
   }
 
@@ -763,7 +821,7 @@ function startGame(){
   debris.forEach(d=>scene.remove(d.mesh));debris.length=0;
   fallingPlanes.forEach(fp=>{fp.smokeTrail.forEach(s=>scene.remove(s));scene.remove(fp.mesh)});fallingPlanes.length=0;
   splashes.forEach(sp=>scene.remove(sp.group));splashes.length=0;
-  waveActive=false;wavePause=3;waveNumber=0;
+  waveActive=false;wavePause=3;waveNumber=0;currentWave=null;waveSpawnIndex=0;waveSpawnTimer=0;lastWaveAngle=Math.random()*Math.PI*2;
   gameActive=true;lastTime=performance.now();
   try{renderer.domElement.requestPointerLock();}catch(e){}
 }
