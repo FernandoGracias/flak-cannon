@@ -138,7 +138,7 @@ dirLight.position.set(-50,80,-30);scene.add(dirLight);
 scene.add(new THREE.HemisphereLight(0x8888cc,0x443322,.4));
 
 // ---- Ground ----
-scene.add(Object.assign(new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.MeshLambertMaterial({color:0x1a2a1a})),{rotation:{x:-Math.PI/2,y:0,z:0}}));
+{const gm=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.MeshLambertMaterial({color:0x1a2a1a}));gm.rotation.x=-Math.PI/2;scene.add(gm);}
 
 // ---- Clouds ----
 const clouds=[];
