@@ -353,6 +353,7 @@ let score=0,gameActive=false;
 const shells=[],planes=[],flakPuffs=[],debris=[],fallingPlanes=[],splashes=[];
 let aimPitch=0.3,aimYaw=0;
 const SHELL_SPEED=180,BLAST_RADIUS=18;
+const _q=new THREE.Quaternion();
 
 const scoreEl=document.getElementById('score');
 const waveInfoEl=document.getElementById('wave-info');
@@ -513,27 +514,31 @@ function fireShell(){
   scene.add(flashLight);
   setTimeout(()=>scene.remove(flashLight),80);
 
-  const dir=new THREE.Vector3();
-  // Aim through the sight's red bead, not camera center
+  const aimDir=new THREE.Vector3();
+  // Where the sight is aiming (through the red bead)
   const beadWorld=new THREE.Vector3();
   bead.getWorldPosition(beadWorld);
-  dir.subVectors(beadWorld,camera.position).normalize();
-  // Project far out so shells fly in that direction
-  dir.multiplyScalar(1);
+  aimDir.subVectors(beadWorld,camera.position).normalize();
   // Add slight random spread for realism
-  dir.x+=(Math.random()-0.5)*0.03;
-  dir.y+=(Math.random()-0.5)*0.03;
-  dir.z+=(Math.random()-0.5)*0.03;
-  dir.normalize();
+  aimDir.x+=(Math.random()-0.5)*0.03;
+  aimDir.y+=(Math.random()-0.5)*0.03;
+  aimDir.z+=(Math.random()-0.5)*0.03;
+  aimDir.normalize();
+
+  // Launch direction: along the barrel's physical axis
+  const barrelDir=new THREE.Vector3(0,0,-1);
+  barrels[bi].group.getWorldQuaternion(_q);
+  barrelDir.applyQuaternion(_q).normalize();
+
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(.25,4,4),new THREE.MeshBasicMaterial({color:0xffcc00}));
   const muzzlePos=new THREE.Vector3();
   barrelFlashes[bi].getWorldPosition(muzzlePos);
   mesh.position.copy(muzzlePos);
   const tail=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,2,4),new THREE.MeshBasicMaterial({color:0xff8800,transparent:true,opacity:0.6}));
-  tail.lookAt(dir);tail.rotateX(Math.PI/2);
+  tail.lookAt(barrelDir);tail.rotateX(Math.PI/2);
   mesh.add(tail);
   scene.add(mesh);
-  shells.push({mesh,dir,speed:SHELL_SPEED,traveled:0,alive:true});
+  shells.push({mesh,dir:barrelDir.clone(),aimDir:aimDir.clone(),speed:SHELL_SPEED,traveled:0,alive:true});
 }
 
 // ---- Flak Burst ----
@@ -778,7 +783,12 @@ function update(time){
   // Update shells
   for(let i=shells.length-1;i>=0;i--){
     const s=shells[i];
+    // Ballistic arc: gradually steer from barrel direction toward sight aim direction
+    const steerRate=2.5*dt; // how fast the shell curves
+    s.dir.lerp(s.aimDir,Math.min(steerRate,1)).normalize();
     s.mesh.position.addScaledVector(s.dir,s.speed*dt);
+    // Orient the tracer tail along current direction
+    if(s.mesh.children[0])s.mesh.children[0].lookAt(s.mesh.position.clone().add(s.dir));
     s.traveled+=s.speed*dt;
     let detonated=false;
     if(s.traveled>40){
