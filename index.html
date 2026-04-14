@@ -47,7 +47,34 @@ import*as THREE from'three';
 // ---- Audio ----
 const AudioCtx=window.AudioContext||window.webkitAudioContext;
 let actx;
-function initAudio(){if(!actx)actx=new AudioCtx()}
+let gunBuffer=null,explosionBuffer=null;
+
+async function initAudio(){
+  if(!actx)actx=new AudioCtx();
+  // Load real audio samples
+  try{
+    const [gunResp,expResp]=await Promise.all([
+      fetch('large_gun.mp3'),fetch('art_explosions.mp3')
+    ]);
+    gunBuffer=await actx.decodeAudioData(await gunResp.arrayBuffer());
+    explosionBuffer=await actx.decodeAudioData(await expResp.arrayBuffer());
+  }catch(e){console.warn('Audio samples failed to load, using procedural fallback',e)}
+}
+
+// Play a random short segment from a buffer
+function playSample(buffer,vol,duration){
+  if(!actx||!buffer)return;
+  const src=actx.createBufferSource();
+  src.buffer=buffer;
+  const g=actx.createGain();
+  g.gain.setValueAtTime(vol,actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+duration);
+  src.connect(g);g.connect(actx.destination);
+  // Pick a random start point, leaving room for duration
+  const maxStart=Math.max(0,buffer.duration-duration-0.1);
+  const offset=Math.random()*maxStart;
+  src.start(actx.currentTime,offset,duration);
+}
 
 // Master volume for all sounds
 const MASTER_VOL=0.35;
@@ -65,44 +92,30 @@ function noiseBuf(dur,decay,curve){
 
 function playCannonFire(){
   if(!actx)return;
+  if(gunBuffer){playSample(gunBuffer,0.5,0.8);return}
+  // Procedural fallback
   const t=actx.currentTime;
   const master=actx.createGain();
   master.gain.value=MASTER_VOL;master.connect(actx.destination);
-
-  // Deep thump — the main body of the sound (low, heavy, muffled)
   const thumpBuf=noiseBuf(0.6,1,1.5);
   const thump=actx.createBufferSource();thump.buffer=thumpBuf;
   const thumpLP=actx.createBiquadFilter();thumpLP.type='lowpass';thumpLP.frequency.setValueAtTime(80,t);thumpLP.frequency.exponentialRampToValueAtTime(30,t+0.5);thumpLP.Q.value=0.8;
   const thumpG=actx.createGain();thumpG.gain.setValueAtTime(0.8,t);thumpG.gain.exponentialRampToValueAtTime(0.001,t+0.5);
   thump.connect(thumpLP);thumpLP.connect(thumpG);thumpG.connect(master);thump.start(t);
-
-  // Soft mid rumble (very low bandpass, no sharpness)
-  const rumbleBuf=noiseBuf(0.3,1,2);
-  const rumble=actx.createBufferSource();rumble.buffer=rumbleBuf;
-  const rumbleBP=actx.createBiquadFilter();rumbleBP.type='bandpass';rumbleBP.frequency.value=150;rumbleBP.Q.value=0.5;
-  const rumbleG=actx.createGain();rumbleG.gain.setValueAtTime(0.3,t);rumbleG.gain.exponentialRampToValueAtTime(0.001,t+0.25);
-  rumble.connect(rumbleBP);rumbleBP.connect(rumbleG);rumbleG.connect(master);rumble.start(t);
 }
 
 function playShellExplode(){
   if(!actx)return;
+  if(explosionBuffer){playSample(explosionBuffer,0.2,0.6);return}
+  // Procedural fallback
   const t=actx.currentTime;
   const master=actx.createGain();
-  master.gain.value=MASTER_VOL*0.5;master.connect(actx.destination);
-
-  // Distant muffled pop (bandpass filtered noise)
+  master.gain.value=MASTER_VOL*0.3;master.connect(actx.destination);
   const popBuf=noiseBuf(0.25,1,2.5);
   const pop=actx.createBufferSource();pop.buffer=popBuf;
   const popBP=actx.createBiquadFilter();popBP.type='bandpass';popBP.frequency.value=300;popBP.Q.value=0.5;
-  const popG=actx.createGain();popG.gain.setValueAtTime(0.6,t);popG.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+  const popG=actx.createGain();popG.gain.setValueAtTime(0.4,t);popG.gain.exponentialRampToValueAtTime(0.001,t+0.25);
   pop.connect(popBP);popBP.connect(popG);popG.connect(master);pop.start(t);
-
-  // Distant echo/reverb tail (low-passed noise, delayed)
-  const tailBuf=noiseBuf(0.4,1,1.0);
-  const tail=actx.createBufferSource();tail.buffer=tailBuf;
-  const tailLP=actx.createBiquadFilter();tailLP.type='lowpass';tailLP.frequency.value=400;
-  const tailG=actx.createGain();tailG.gain.setValueAtTime(0.25,t+0.08);tailG.gain.exponentialRampToValueAtTime(0.001,t+0.45);
-  tail.connect(tailLP);tailLP.connect(tailG);tailG.connect(master);tail.start(t+0.08);
 }
 
 function playPlaneExplode(){
