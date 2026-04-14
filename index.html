@@ -198,7 +198,7 @@ createSky();
 
 // ---- Ocean ----
 const oceanGeo=new THREE.PlaneGeometry(30000,30000,40,40);
-const oceanMat=new THREE.MeshLambertMaterial({color:0x6a8090});
+const oceanMat=new THREE.MeshLambertMaterial({color:0x808890});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);
 ocean.rotation.x=-Math.PI/2;ocean.position.y=-0.5;scene.add(ocean);
 
