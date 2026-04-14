@@ -625,15 +625,43 @@ function startPlaneCrash(p,idx){
     fireMeshes.push(fire);
   }
 
-  // Convert to falling plane
+  // Varied crash behaviors:
+  // 0 = gradual descent (maintains most momentum, shallow dive)
+  // 1 = spiral (keeps speed but spins)
+  // 2 = nose dive (loses lift, drops steeply)
+  const crashType=Math.random();
+  let keepMomentum, initVy, tumbleX, tumbleZ, tumbleY;
+  if(crashType<0.4){
+    // Gradual descent — keeps flying but slowly loses altitude
+    keepMomentum=0.9+Math.random()*0.1;
+    initVy=-1-Math.random()*3;
+    tumbleX=(Math.random()-0.5)*0.5;
+    tumbleZ=(Math.random()-0.5)*0.3;
+    tumbleY=(Math.random()-0.5)*0.3;
+  }else if(crashType<0.7){
+    // Spiral — spins while maintaining some forward speed
+    keepMomentum=0.6+Math.random()*0.2;
+    initVy=-2-Math.random()*5;
+    tumbleX=(Math.random()-0.5)*4;
+    tumbleZ=(Math.random()-0.5)*4;
+    tumbleY=2+Math.random()*3;
+  }else{
+    // Nose dive — steep drop
+    keepMomentum=0.3+Math.random()*0.2;
+    initVy=-8-Math.random()*8;
+    tumbleX=(Math.random()-0.5)*2;
+    tumbleZ=(Math.random()-0.5)*2;
+    tumbleY=(Math.random()-0.5)*1;
+  }
+
   fallingPlanes.push({
     mesh:p.mesh,
-    vx:p.vx*0.5, // keep some forward momentum
-    vz:p.vz*0.5,
-    vy:-5-Math.random()*10, // start falling
-    rotX:(Math.random()-0.5)*3, // tumble rates
-    rotZ:(Math.random()-0.5)*3,
-    rotY:(Math.random()-0.5)*1,
+    vx:p.vx*keepMomentum,
+    vz:p.vz*keepMomentum,
+    vy:initVy,
+    rotX:tumbleX,
+    rotZ:tumbleZ,
+    rotY:tumbleY,
     fireMeshes,
     smokeTimer:0,
     smokeTrail:[]
@@ -806,7 +834,7 @@ function update(time){
   // Update falling/crashing planes
   for(let i=fallingPlanes.length-1;i>=0;i--){
     const fp=fallingPlanes[i];
-    fp.vy-=15*dt; // gravity
+    fp.vy-=6*dt; // gravity (gentle — planes have mass and drag)
     fp.mesh.position.x+=fp.vx*dt;
     fp.mesh.position.y+=fp.vy*dt;
     fp.mesh.position.z+=fp.vz*dt;
