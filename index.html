@@ -414,7 +414,7 @@ function generateWave(){
   const types=['high_bombing','low_torpedo','medium_strafing','mixed'];
   const type=types[Math.floor(Math.random()*types.length)];
   const angle=pickDirection();
-  const dist=8000;
+  const dist=4000;
   // Offset the flight path so planes pass NEAR the player, not directly over
   // Random lateral offset: -300 to +300 units from center
   const passOffset=(Math.random()-0.5)*600;
