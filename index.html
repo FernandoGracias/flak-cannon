@@ -223,12 +223,12 @@ const deck=new THREE.Mesh(new THREE.BoxGeometry(20,0.3,90),shipDeckMat);
 deck.position.set(0,5.1,0);hullShape.add(deck);
 // Superstructure (bridge/tower behind the player)
 const bridge=new THREE.Mesh(new THREE.BoxGeometry(8,10,12),shipMat);
-bridge.position.set(0,10,20);hullShape.add(bridge);
+bridge.position.set(0,10,40);hullShape.add(bridge);
 const bridgeTop=new THREE.Mesh(new THREE.BoxGeometry(6,2,8),shipMat);
-bridgeTop.position.set(0,16,20);hullShape.add(bridgeTop);
+bridgeTop.position.set(0,16,40);hullShape.add(bridgeTop);
 // Funnel
 const funnel=new THREE.Mesh(new THREE.CylinderGeometry(2,2.5,8,8),new THREE.MeshLambertMaterial({color:0x444444}));
-funnel.position.set(0,14,28);hullShape.add(funnel);
+funnel.position.set(0,14,50);hullShape.add(funnel);
 // Gun turret bases (other AA positions)
 for(const zz of[-20,35]){
   const tBase=new THREE.Mesh(new THREE.CylinderGeometry(2.5,3,1.5,12),shipMat);
@@ -553,8 +553,20 @@ function createFighter(){
 
 // ---- Shell: visible traveling projectile ----
 function fireShell(){
-  // Safety interlock: don't fire into own ship (below ~5° elevation)
-  if(aimPitch<0.09)return;
+  // Safety interlock: don't fire into own ship superstructure
+  // Ship bridge is behind player (positive Z). Block if aimed low and backward.
+  const aimDirCheck=new THREE.Vector3(0,0,-1);
+  aimDirCheck.applyQuaternion(camera.quaternion);
+  // If aimed downward (y < -0.1) and toward the ship deck area (within ~30 units of origin at y<5)
+  if(aimPitch<0.08&&Math.abs(aimDirCheck.z)>0.5){
+    // Check if the aim ray would hit the ship deck (y~5, within x±10, z±50)
+    const t=(5-camera.position.y)/aimDirCheck.y;
+    if(t>0){
+      const hitX=camera.position.x+aimDirCheck.x*t;
+      const hitZ=camera.position.z+aimDirCheck.z*t;
+      if(Math.abs(hitX)<12&&hitZ>-55&&hitZ<50)return;
+    }
+  }
   playCannonFire();
   const bi=currentBarrel;
   currentBarrel=(currentBarrel+1)%4;
