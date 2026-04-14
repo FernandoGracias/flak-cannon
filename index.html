@@ -232,10 +232,8 @@ pedestal.position.y=1.8;cannonGroup.add(pedestal);
 const tRing=new THREE.Mesh(new THREE.CylinderGeometry(3.8,4,0.6,20),new THREE.MeshLambertMaterial({color:0x4a4a4a}));
 tRing.position.y=2.9;cannonGroup.add(tRing);
 
-// Main turret housing - chunky rectangular body
-const mountMat=new THREE.MeshLambertMaterial({color:0x505050});
-const mount=new THREE.Mesh(new THREE.BoxGeometry(6,3.2,5),mountMat);
-mount.position.set(0,0,0.5);cannonPivot.add(mount);
+// Main turret housing - below the gunner, not visible from first person
+// (removed - was blocking center view)
 
 // Armored shield - side plates only (player sits in the middle, looking through the sight)
 const shieldMat=new THREE.MeshLambertMaterial({color:0x4a5a4a});
@@ -290,18 +288,18 @@ for(let i=0;i<4;i++){
 const sightWireMat=new THREE.MeshBasicMaterial({color:0x222222});
 const sightLineMat=new THREE.LineBasicMaterial({color:0x222222,transparent:true,opacity:0.7});
 const sightZ=-6;
-const sightY=1.2;
+const sightY=4.0;
 const sightR=1.4; // outer ring radius
 
 // Support posts — thin triangular frame
 const postGeo=new THREE.CylinderGeometry(0.04,0.04,2,4);
 const postL=new THREE.Mesh(postGeo,sightWireMat);
-postL.position.set(-0.6,0.2,sightZ);cannonPivot.add(postL);
+postL.position.set(-0.6,2.5,sightZ);cannonPivot.add(postL);
 const postR=new THREE.Mesh(postGeo,sightWireMat);
-postR.position.set(0.6,0.2,sightZ);cannonPivot.add(postR);
+postR.position.set(0.6,2.5,sightZ);cannonPivot.add(postR);
 // Cross brace
 const brace=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,4),sightWireMat);
-brace.rotation.z=Math.PI/2;brace.position.set(0,0.7,sightZ);cannonPivot.add(brace);
+brace.rotation.z=Math.PI/2;brace.position.set(0,3.2,sightZ);cannonPivot.add(brace);
 
 // Concentric rings (outer ring + 3 inner rings)
 const ringRadii=[sightR, sightR*0.7, sightR*0.45, sightR*0.2];
