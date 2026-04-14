@@ -906,6 +906,11 @@ function update(time){
     p.mesh.position.z+=p.vz*dt;
     // Smoke trail for damaged planes
     if(p.smoking){
+      // Damage over time: ~5% chance per second a damaged plane gives out
+      if(Math.random()<0.05*dt){
+        startPlaneCrash(p,i);
+        continue;
+      }
       if(!p._smokeTimer)p._smokeTimer=0;
       p._smokeTimer+=dt;
       if(p._smokeTimer>0.08){
@@ -953,6 +958,15 @@ function update(time){
     fp.mesh.rotation.x+=fp.rotX*dt;
     fp.mesh.rotation.z+=fp.rotZ*dt;
     fp.mesh.rotation.y+=fp.rotY*dt;
+
+    // Collision: falling wreckage hits active planes
+    for(let j=planes.length-1;j>=0;j--){
+      const dist=fp.mesh.position.distanceTo(planes[j].mesh.position);
+      if(dist<15){
+        startPlaneCrash(planes[j],j);
+        break;
+      }
+    }
 
     // Smoke trail while falling
     fp.smokeTimer+=dt;
