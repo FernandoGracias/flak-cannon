@@ -198,7 +198,7 @@ createSky();
 
 // ---- Ocean ----
 const oceanGeo=new THREE.PlaneGeometry(30000,30000,40,40);
-const oceanMat=new THREE.MeshLambertMaterial({color:0x1a4a6a});
+const oceanMat=new THREE.MeshLambertMaterial({color:0x6a8090});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);
 ocean.rotation.x=-Math.PI/2;ocean.position.y=-0.5;scene.add(ocean);
 
@@ -209,13 +209,13 @@ const shipDeckMat=new THREE.MeshLambertMaterial({color:0x606068});
 const hullShape=new THREE.Group();
 const hullMain=new THREE.Mesh(new THREE.BoxGeometry(18,6,80),shipMat);
 hullMain.position.set(0,2,0);hullShape.add(hullMain);
-// Bow taper
-const bowGeo=new THREE.CylinderGeometry(0,9,20,4,1);
+// Bow taper — proper pointed bow with enough segments
+const bowGeo=new THREE.CylinderGeometry(0,9,20,12,1);
 const bow=new THREE.Mesh(bowGeo,shipMat);
-bow.rotation.x=Math.PI/2;bow.rotation.y=Math.PI/4;bow.position.set(0,2,-50);hullShape.add(bow);
-// Stern
-const stern=new THREE.Mesh(new THREE.BoxGeometry(16,6,8),shipMat);
-stern.position.set(0,2,44);hullShape.add(stern);
+bow.rotation.x=Math.PI/2;bow.position.set(0,2,-50);hullShape.add(bow);
+// Stern — rounded
+const stern=new THREE.Mesh(new THREE.SphereGeometry(9,12,8),shipMat);
+stern.scale.set(0.9,0.33,0.5);stern.position.set(0,2,44);hullShape.add(stern);
 // Deck
 const deck=new THREE.Mesh(new THREE.BoxGeometry(20,0.3,90),shipDeckMat);
 deck.position.set(0,5.1,0);hullShape.add(deck);
