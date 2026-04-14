@@ -725,21 +725,21 @@ function startPlaneCrash(p,idx){
   if(crashType<0.4){
     // Gradual descent — keeps flying but slowly loses altitude
     keepMomentum=0.9+Math.random()*0.1;
-    initVy=-1-Math.random()*3;
+    initVy=-1-Math.random()*2;
     tumbleX=(Math.random()-0.5)*0.5;
     tumbleZ=(Math.random()-0.5)*0.3;
     tumbleY=(Math.random()-0.5)*0.3;
   }else if(crashType<0.7){
-    // Spiral — spins while maintaining some forward speed
-    keepMomentum=0.6+Math.random()*0.2;
-    initVy=-2-Math.random()*5;
+    // Spiral — spins while maintaining forward speed
+    keepMomentum=0.7+Math.random()*0.2;
+    initVy=-2-Math.random()*3;
     tumbleX=(Math.random()-0.5)*4;
     tumbleZ=(Math.random()-0.5)*4;
     tumbleY=2+Math.random()*3;
   }else{
-    // Nose dive — steep drop
-    keepMomentum=0.3+Math.random()*0.2;
-    initVy=-8-Math.random()*8;
+    // Steep dive — drops faster but still has forward momentum
+    keepMomentum=0.5+Math.random()*0.2;
+    initVy=-4-Math.random()*4;
     tumbleX=(Math.random()-0.5)*2;
     tumbleZ=(Math.random()-0.5)*2;
     tumbleY=(Math.random()-0.5)*1;
