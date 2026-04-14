@@ -58,19 +58,20 @@ async function initAudio(){
     gunBuffer=await actx.decodeAudioData(await gunResp.arrayBuffer());
     explosionBuffer=await actx.decodeAudioData(await expResp.arrayBuffer());
   }catch(e){console.warn('Audio samples failed to load, using procedural fallback',e)}
-  // Engine drone — two oscillators for that WW2 radial engine buzz
+  // Load engine loop samples
+  try{
+    const [fResp,bResp]=await Promise.all([fetch('engine_fighter.mp3'),fetch('engine_bomber.mp3')]);
+    engineFighterBuf=await actx.decodeAudioData(await fResp.arrayBuffer());
+    engineBomberBuf=await actx.decodeAudioData(await bResp.arrayBuffer());
+  }catch(e){console.warn('Engine audio failed',e)}
+  // Engine audio nodes — two looping sources, volume controlled by proximity
   engineGain=actx.createGain();engineGain.gain.value=0;engineGain.connect(actx.destination);
-  const eng1=actx.createOscillator();eng1.type='sawtooth';eng1.frequency.value=85;
-  const eng1g=actx.createGain();eng1g.gain.value=0.15;
-  eng1.connect(eng1g);eng1g.connect(engineGain);eng1.start();
-  const eng2=actx.createOscillator();eng2.type='sawtooth';eng2.frequency.value=170;
-  const eng2g=actx.createGain();eng2g.gain.value=0.08;
-  eng2.connect(eng2g);eng2g.connect(engineGain);eng2.start();
-  // Low-pass to muffle it
-  const engLP=actx.createBiquadFilter();engLP.type='lowpass';engLP.frequency.value=400;
-  engineGain.disconnect();engineGain.connect(engLP);engLP.connect(actx.destination);
+  if(engineFighterBuf){
+    const src=actx.createBufferSource();src.buffer=engineFighterBuf;src.loop=true;
+    src.connect(engineGain);src.start();
+  }
 }
-let engineGain=null;
+let engineGain=null,engineFighterBuf=null,engineBomberBuf=null;
 
 // Play a sample from the start (consistent sound)
 function playFromStart(buffer,vol,duration){
@@ -552,6 +553,8 @@ function createFighter(){
 
 // ---- Shell: visible traveling projectile ----
 function fireShell(){
+  // Safety interlock: don't fire into own ship (below ~5° elevation)
+  if(aimPitch<0.09)return;
   playCannonFire();
   const bi=currentBarrel;
   currentBarrel=(currentBarrel+1)%4;
