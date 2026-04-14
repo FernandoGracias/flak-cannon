@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flak Cannon</title>
 <style>
-*{margin:0;padding:0;overflow:hidden}
+*{margin:0;padding:0;overflow:hidden;touch-action:none}
 body{background:#000;font-family:'Courier New',monospace}
 canvas{display:block}
 #hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;padding:20px;box-sizing:border-box}
@@ -806,6 +806,33 @@ document.addEventListener('mouseup',e=>{
   if(e.button===0)mouseDown=false;
 });
 document.addEventListener('contextmenu',e=>e.preventDefault());
+
+// ---- Touch input (mobile) ----
+let lastTouchX=0,lastTouchY=0,touching=false;
+document.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(!gameActive)return;
+  const t=e.touches[0];
+  lastTouchX=t.clientX;lastTouchY=t.clientY;
+  touching=true;
+  const now=performance.now()/1000;
+  if(now-lastFireTime>=FIRE_RATE){fireShell();lastFireTime=now;}
+  mouseDown=true;fireTimer=0;
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(!gameActive||!e.touches.length)return;
+  const t=e.touches[0];
+  const dx=t.clientX-lastTouchX,dy=t.clientY-lastTouchY;
+  aimYaw+=dx*0.004;
+  aimPitch-=dy*0.004;
+  aimPitch=Math.max(.05,Math.min(1.4,aimPitch));
+  lastTouchX=t.clientX;lastTouchY=t.clientY;
+},{passive:false});
+document.addEventListener('touchend',e=>{
+  e.preventDefault();
+  touching=false;mouseDown=false;
+},{passive:false});
 
 // ---- Game loop ----
 let lastTime=0;
