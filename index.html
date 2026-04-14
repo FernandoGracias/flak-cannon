@@ -810,8 +810,8 @@ document.addEventListener('contextmenu',e=>e.preventDefault());
 // ---- Touch input (mobile) ----
 let lastTouchX=0,lastTouchY=0,touching=false;
 document.addEventListener('touchstart',e=>{
-  e.preventDefault();
   if(!gameActive)return;
+  e.preventDefault();
   const t=e.touches[0];
   lastTouchX=t.clientX;lastTouchY=t.clientY;
   touching=true;
@@ -820,8 +820,8 @@ document.addEventListener('touchstart',e=>{
   mouseDown=true;fireTimer=0;
 },{passive:false});
 document.addEventListener('touchmove',e=>{
-  e.preventDefault();
   if(!gameActive||!e.touches.length)return;
+  e.preventDefault();
   const t=e.touches[0];
   const dx=t.clientX-lastTouchX,dy=t.clientY-lastTouchY;
   aimYaw+=dx*0.004;
@@ -830,6 +830,7 @@ document.addEventListener('touchmove',e=>{
   lastTouchX=t.clientX;lastTouchY=t.clientY;
 },{passive:false});
 document.addEventListener('touchend',e=>{
+  if(!gameActive)return;
   e.preventDefault();
   touching=false;mouseDown=false;
 },{passive:false});
