@@ -58,7 +58,19 @@ async function initAudio(){
     gunBuffer=await actx.decodeAudioData(await gunResp.arrayBuffer());
     explosionBuffer=await actx.decodeAudioData(await expResp.arrayBuffer());
   }catch(e){console.warn('Audio samples failed to load, using procedural fallback',e)}
+  // Engine drone — two oscillators for that WW2 radial engine buzz
+  engineGain=actx.createGain();engineGain.gain.value=0;engineGain.connect(actx.destination);
+  const eng1=actx.createOscillator();eng1.type='sawtooth';eng1.frequency.value=85;
+  const eng1g=actx.createGain();eng1g.gain.value=0.15;
+  eng1.connect(eng1g);eng1g.connect(engineGain);eng1.start();
+  const eng2=actx.createOscillator();eng2.type='sawtooth';eng2.frequency.value=170;
+  const eng2g=actx.createGain();eng2g.gain.value=0.08;
+  eng2.connect(eng2g);eng2g.connect(engineGain);eng2.start();
+  // Low-pass to muffle it
+  const engLP=actx.createBiquadFilter();engLP.type='lowpass';engLP.frequency.value=400;
+  engineGain.disconnect();engineGain.connect(engLP);engLP.connect(actx.destination);
 }
+let engineGain=null;
 
 // Play a sample from the start (consistent sound)
 function playFromStart(buffer,vol,duration){
@@ -190,6 +202,39 @@ const oceanGeo=new THREE.PlaneGeometry(2000,2000,40,40);
 const oceanMat=new THREE.MeshLambertMaterial({color:0x1a4a6a});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);
 ocean.rotation.x=-Math.PI/2;ocean.position.y=-0.5;scene.add(ocean);
+
+// ---- Ship (player is on a warship) ----
+const shipMat=new THREE.MeshLambertMaterial({color:0x555560});
+const shipDeckMat=new THREE.MeshLambertMaterial({color:0x606068});
+// Hull — long tapered shape
+const hullShape=new THREE.Group();
+const hullMain=new THREE.Mesh(new THREE.BoxGeometry(18,6,80),shipMat);
+hullMain.position.set(0,2,0);hullShape.add(hullMain);
+// Bow taper
+const bowGeo=new THREE.CylinderGeometry(0,9,20,4,1);
+const bow=new THREE.Mesh(bowGeo,shipMat);
+bow.rotation.x=Math.PI/2;bow.rotation.y=Math.PI/4;bow.position.set(0,2,-50);hullShape.add(bow);
+// Stern
+const stern=new THREE.Mesh(new THREE.BoxGeometry(16,6,8),shipMat);
+stern.position.set(0,2,44);hullShape.add(stern);
+// Deck
+const deck=new THREE.Mesh(new THREE.BoxGeometry(20,0.3,90),shipDeckMat);
+deck.position.set(0,5.1,0);hullShape.add(deck);
+// Superstructure (bridge/tower behind the player)
+const bridge=new THREE.Mesh(new THREE.BoxGeometry(8,10,12),shipMat);
+bridge.position.set(0,10,20);hullShape.add(bridge);
+const bridgeTop=new THREE.Mesh(new THREE.BoxGeometry(6,2,8),shipMat);
+bridgeTop.position.set(0,16,20);hullShape.add(bridgeTop);
+// Funnel
+const funnel=new THREE.Mesh(new THREE.CylinderGeometry(2,2.5,8,8),new THREE.MeshLambertMaterial({color:0x444444}));
+funnel.position.set(0,14,28);hullShape.add(funnel);
+// Gun turret bases (other AA positions)
+for(const zz of[-20,35]){
+  const tBase=new THREE.Mesh(new THREE.CylinderGeometry(2.5,3,1.5,12),shipMat);
+  tBase.position.set(0,5.8,zz);hullShape.add(tBase);
+}
+hullShape.position.set(0,-5.5,0);
+scene.add(hullShape);
 
 // ---- Lighting ----
 scene.add(new THREE.AmbientLight(0xffa070,.6));
@@ -807,6 +852,12 @@ function update(time){
       }
     }
     if(s.traveled>600)detonated=true;
+    // Shell hits water
+    if(s.mesh.position.y<=0){
+      createSplash(s.mesh.position.clone());
+      scene.remove(s.mesh);shells.splice(i,1);
+      continue;
+    }
     if(detonated){
       const burstPos=s.mesh.position.clone();
       createFlakBurst(burstPos);
@@ -847,6 +898,16 @@ function update(time){
       p.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(p.mesh);planes.splice(i,1);
     }
+  }
+
+  // Update engine drone volume based on nearest plane
+  if(engineGain){
+    let minDist=9999;
+    for(const p of planes)minDist=Math.min(minDist,p.mesh.position.distanceTo(camera.position));
+    for(const fp of fallingPlanes)minDist=Math.min(minDist,fp.mesh.position.distanceTo(camera.position));
+    // Louder when closer: full volume at dist 50, silent at dist 800+
+    const vol=Math.max(0,Math.min(0.25,0.25*(1-minDist/800)));
+    engineGain.gain.value+=(vol-engineGain.gain.value)*0.05;
   }
 
   // Update falling/crashing planes
