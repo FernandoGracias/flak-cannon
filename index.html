@@ -998,7 +998,41 @@ document.getElementById('start-screen').addEventListener('click',()=>{
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
+  layoutGun();
 });
+
+// Position gun elements based on screen aspect ratio so barrels are always visible
+function layoutGun(){
+  const aspect=innerWidth/innerHeight;
+  // At z=7 from camera with FOV 70, half-width = 7*tan(35)*aspect
+  const halfW=7*Math.tan(35*Math.PI/180)*aspect;
+  // Place barrels at 85% of visible half-width
+  const outerX=halfW*0.85;
+  const innerX=halfW*0.72;
+  const shieldX=halfW*0.92;
+  const feedX=halfW*0.78;
+  const seatX=halfW*0.82;
+
+  barrels[0].group.position.x=-outerX;
+  barrels[1].group.position.x=-innerX;
+  barrels[2].group.position.x=innerX;
+  barrels[3].group.position.x=outerX;
+  barrelFlashes[0].position.x=-outerX;
+  barrelFlashes[1].position.x=-innerX;
+  barrelFlashes[2].position.x=innerX;
+  barrelFlashes[3].position.x=outerX;
+  barrelPositions[0].x=-outerX;
+  barrelPositions[1].x=-innerX;
+  barrelPositions[2].x=innerX;
+  barrelPositions[3].x=outerX;
+  shieldL.position.x=-shieldX;
+  shieldR.position.x=shieldX;
+  feedL.position.x=-feedX;
+  feedR.position.x=feedX;
+  seatL2.position.x=-seatX;
+  seatR2.position.x=seatX;
+}
+layoutGun();
 
 requestAnimationFrame(update);
 </script>
