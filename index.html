@@ -102,7 +102,7 @@ function noiseBuf(dur,decay,curve){
 
 function playCannonFire(){
   if(!actx)return;
-  if(gunBuffer){playFromStart(gunBuffer,1.0,0.8);return}
+  if(gunBuffer){playFromStart(gunBuffer,1.0,0.5);return}
   // Procedural fallback
   const t=actx.currentTime;
   const master=actx.createGain();
@@ -596,8 +596,8 @@ function checkFlakDamage(pos){
 // ---- Plane Crash System (planes fall, tumble, splash into ocean) ----
 function startPlaneCrash(p,idx){
   playPlaneExplode();
-  // Remove from active planes
-  p.smokeTrail.forEach(s=>scene.remove(s));
+  // Transfer existing smoke trail to orphan list (fades naturally)
+  p.smokeTrail.forEach(s=>orphanSmoke.push(s));
   planes.splice(idx,1);
 
   // Initial explosion effect at the plane
@@ -947,7 +947,9 @@ function update(time){
     const sm=orphanSmoke[i];
     sm.userData.age+=dt;
     sm.material.opacity=Math.max(0,0.6-sm.userData.age*0.1);
-    sm.scale.setScalar(1+sm.userData.age*1.5);
+    // Grow gently from current size, don't reset
+    const s=sm.scale.x+dt*0.3;
+    sm.scale.setScalar(s);
     if(sm.userData.age>6){scene.remove(sm);orphanSmoke.splice(i,1);}
   }
 
