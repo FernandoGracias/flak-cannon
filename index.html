@@ -167,7 +167,7 @@ function playSplash(){
 
 // ---- Engine ----
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2000);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,5000);
 camera.position.set(0,8,0);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setClearColor(0x1a1a4e);
@@ -414,7 +414,7 @@ function generateWave(){
   const types=['high_bombing','low_torpedo','medium_strafing','mixed'];
   const type=types[Math.floor(Math.random()*types.length)];
   const angle=pickDirection();
-  const dist=1200;
+  const dist=2500;
   // Offset the flight path so planes pass NEAR the player, not directly over
   // Random lateral offset: -300 to +300 units from center
   const passOffset=(Math.random()-0.5)*600;
@@ -927,7 +927,7 @@ function update(time){
         if(sm.userData.age>3){scene.remove(sm);p.smokeTrail.splice(si,1);}
       }
     }
-    if(p.mesh.position.length()>1500){
+    if(p.mesh.position.length()>3000){
       p.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(p.mesh);planes.splice(i,1);
     }
@@ -999,7 +999,7 @@ function update(time){
       fallingPlanes.splice(i,1);
     }
     // Remove if too far away
-    if(fp.mesh.position.length()>900){
+    if(fp.mesh.position.length()>3000){
       fp.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(fp.mesh);
       fallingPlanes.splice(i,1);
