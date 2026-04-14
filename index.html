@@ -69,26 +69,19 @@ function playCannonFire(){
   const master=actx.createGain();
   master.gain.value=MASTER_VOL;master.connect(actx.destination);
 
-  // Low-frequency thump body (filtered noise, not oscillator)
-  const thumpBuf=noiseBuf(0.5,1,1.2);
+  // Deep thump — the main body of the sound (low, heavy, muffled)
+  const thumpBuf=noiseBuf(0.6,1,1.5);
   const thump=actx.createBufferSource();thump.buffer=thumpBuf;
-  const thumpLP=actx.createBiquadFilter();thumpLP.type='lowpass';thumpLP.frequency.setValueAtTime(120,t);thumpLP.frequency.exponentialRampToValueAtTime(40,t+0.4);thumpLP.Q.value=1.2;
-  const thumpG=actx.createGain();thumpG.gain.setValueAtTime(1.0,t);thumpG.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+  const thumpLP=actx.createBiquadFilter();thumpLP.type='lowpass';thumpLP.frequency.setValueAtTime(80,t);thumpLP.frequency.exponentialRampToValueAtTime(30,t+0.5);thumpLP.Q.value=0.8;
+  const thumpG=actx.createGain();thumpG.gain.setValueAtTime(0.8,t);thumpG.gain.exponentialRampToValueAtTime(0.001,t+0.5);
   thump.connect(thumpLP);thumpLP.connect(thumpG);thumpG.connect(master);thump.start(t);
 
-  // Mid-frequency punch (bandpass noise for the "crack" body)
-  const punchBuf=noiseBuf(0.2,1,3);
-  const punch=actx.createBufferSource();punch.buffer=punchBuf;
-  const punchBP=actx.createBiquadFilter();punchBP.type='bandpass';punchBP.frequency.value=400;punchBP.Q.value=0.8;
-  const punchG=actx.createGain();punchG.gain.setValueAtTime(0.5,t);punchG.gain.exponentialRampToValueAtTime(0.001,t+0.15);
-  punch.connect(punchBP);punchBP.connect(punchG);punchG.connect(master);punch.start(t);
-
-  // High transient click (very short noise burst for attack)
-  const clickBuf=noiseBuf(0.03,1,6);
-  const click=actx.createBufferSource();click.buffer=clickBuf;
-  const clickHP=actx.createBiquadFilter();clickHP.type='highpass';clickHP.frequency.value=800;
-  const clickG=actx.createGain();clickG.gain.setValueAtTime(0.3,t);clickG.gain.exponentialRampToValueAtTime(0.001,t+0.03);
-  click.connect(clickHP);clickHP.connect(clickG);clickG.connect(master);click.start(t);
+  // Soft mid rumble (very low bandpass, no sharpness)
+  const rumbleBuf=noiseBuf(0.3,1,2);
+  const rumble=actx.createBufferSource();rumble.buffer=rumbleBuf;
+  const rumbleBP=actx.createBiquadFilter();rumbleBP.type='bandpass';rumbleBP.frequency.value=150;rumbleBP.Q.value=0.5;
+  const rumbleG=actx.createGain();rumbleG.gain.setValueAtTime(0.3,t);rumbleG.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+  rumble.connect(rumbleBP);rumbleBP.connect(rumbleG);rumbleG.connect(master);rumble.start(t);
 }
 
 function playShellExplode(){
@@ -100,7 +93,7 @@ function playShellExplode(){
   // Distant muffled pop (bandpass filtered noise)
   const popBuf=noiseBuf(0.25,1,2.5);
   const pop=actx.createBufferSource();pop.buffer=popBuf;
-  const popBP=actx.createBiquadFilter();popBP.type='bandpass';popBP.frequency.value=600;popBP.Q.value=0.6;
+  const popBP=actx.createBiquadFilter();popBP.type='bandpass';popBP.frequency.value=300;popBP.Q.value=0.5;
   const popG=actx.createGain();popG.gain.setValueAtTime(0.6,t);popG.gain.exponentialRampToValueAtTime(0.001,t+0.25);
   pop.connect(popBP);popBP.connect(popG);popG.connect(master);pop.start(t);
 
