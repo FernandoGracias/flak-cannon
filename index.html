@@ -377,7 +377,7 @@ function generateWave(){
   const types=['high_bombing','low_torpedo','medium_strafing','mixed'];
   const type=types[Math.floor(Math.random()*types.length)];
   const angle=pickDirection();
-  const dist=550;
+  const dist=1200;
   const baseX=Math.cos(angle)*dist, baseZ=Math.sin(angle)*dist;
   const dx=-Math.cos(angle), dz=-Math.sin(angle);
   const perpX=-dz, perpZ=dx;
@@ -547,7 +547,7 @@ function createFlakBurst(pos){
   g.add(flash);
   g.position.copy(pos);scene.add(g);
   const light=new THREE.PointLight(0x888888,2,30);light.position.copy(pos);scene.add(light);
-  flakPuffs.push({group:g,light,age:0,duration:4+Math.random()*2});
+  flakPuffs.push({group:g,light,age:0,duration:15+Math.random()*10});
 }
 
 function checkFlakDamage(pos){
@@ -863,7 +863,7 @@ function update(time){
         }else if(c.userData.vel){
           c.position.addScaledVector(c.userData.vel,dt*0.3);
           c.scale.setScalar(1+t*2.5);
-          c.material.opacity=t<0.6?0.75:Math.max(0,0.75*(1-(t-0.6)/0.4));
+          c.material.opacity=t<0.8?0.75:Math.max(0,0.75*(1-(t-0.8)/0.2));
         }
       }
     });
