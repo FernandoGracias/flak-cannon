@@ -58,20 +58,18 @@ async function initAudio(){
     gunBuffer=await actx.decodeAudioData(await gunResp.arrayBuffer());
     explosionBuffer=await actx.decodeAudioData(await expResp.arrayBuffer());
   }catch(e){console.warn('Audio samples failed to load, using procedural fallback',e)}
-  // Load engine loop samples
+  // Load engine drone sample (distant formation hum)
   try{
-    const [fResp,bResp]=await Promise.all([fetch('engine_fighter.mp3'),fetch('engine_bomber.mp3')]);
-    engineFighterBuf=await actx.decodeAudioData(await fResp.arrayBuffer());
-    engineBomberBuf=await actx.decodeAudioData(await bResp.arrayBuffer());
+    const eResp=await fetch('engine_drone.mp3');
+    engineDroneBuf=await actx.decodeAudioData(await eResp.arrayBuffer());
   }catch(e){console.warn('Engine audio failed',e)}
-  // Engine audio nodes — two looping sources, volume controlled by proximity
   engineGain=actx.createGain();engineGain.gain.value=0;engineGain.connect(actx.destination);
-  if(engineFighterBuf){
-    const src=actx.createBufferSource();src.buffer=engineFighterBuf;src.loop=true;
+  if(engineDroneBuf){
+    const src=actx.createBufferSource();src.buffer=engineDroneBuf;src.loop=true;
     src.connect(engineGain);src.start();
   }
 }
-let engineGain=null,engineFighterBuf=null,engineBomberBuf=null;
+let engineGain=null,engineDroneBuf=null;
 
 // Play a sample from the start (consistent sound)
 function playFromStart(buffer,vol,duration){
