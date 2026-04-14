@@ -349,7 +349,7 @@ camera.add(cannonGroup);
 scene.add(camera);
 
 // ---- Game State ----
-let mouseDown=false,currentBarrel=0,fireTimer=0;
+let mouseDown=false,currentBarrel=0,fireTimer=0,lastFireTime=0;
 const FIRE_RATE=0.5;
 let score=0,gameActive=false;
 const shells=[],planes=[],flakPuffs=[],debris=[],fallingPlanes=[],splashes=[];
@@ -513,6 +513,10 @@ function fireShell(){
 
   const dir=new THREE.Vector3(0,0,-1);
   dir.applyQuaternion(camera.quaternion);
+  // Add slight random spread for realism
+  dir.x+=(Math.random()-0.5)*0.03;
+  dir.y+=(Math.random()-0.5)*0.03;
+  dir.z+=(Math.random()-0.5)*0.03;
   dir.normalize();
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(.25,4,4),new THREE.MeshBasicMaterial({color:0xffcc00}));
   mesh.position.copy(camera.position).add(new THREE.Vector3(0,-1,0));
@@ -665,7 +669,9 @@ document.addEventListener('mousemove',e=>{
 document.addEventListener('mousedown',e=>{
   if(e.button===0&&gameActive){
     if(!document.pointerLockElement){try{renderer.domElement.requestPointerLock();}catch(ex){}}
-    fireShell();mouseDown=true;fireTimer=0;
+    const now=performance.now()/1000;
+    if(now-lastFireTime>=FIRE_RATE){fireShell();lastFireTime=now;}
+    mouseDown=true;fireTimer=0;
   }
 });
 document.addEventListener('mouseup',e=>{
@@ -782,7 +788,7 @@ function update(time){
         if(sm.userData.age>3){scene.remove(sm);p.smokeTrail.splice(si,1);}
       }
     }
-    if(p.mesh.position.length()>800){
+    if(p.mesh.position.length()>1500){
       p.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(p.mesh);planes.splice(i,1);
     }
