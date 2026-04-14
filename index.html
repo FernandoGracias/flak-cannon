@@ -855,7 +855,7 @@ function update(time){
     }
   }else{
     wavePause-=dt;
-    if(wavePause<=0){
+    if(wavePause<=0&&planes.length<200){
       waveNumber++;
       currentWave=generateWave();
       waveSpawnIndex=0;
