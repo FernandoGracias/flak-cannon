@@ -167,7 +167,7 @@ function playSplash(){
 
 // ---- Engine ----
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,5000);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,50000);
 camera.position.set(0,8,0);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setClearColor(0x1a1a4e);
@@ -192,12 +192,12 @@ function createSky(){
   grd.addColorStop(1,'#264653');
   ctx.fillStyle=grd;ctx.fillRect(0,0,512,512);
   const tex=new THREE.CanvasTexture(c);
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(900,32,32),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide})));
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(20000,32,32),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide})));
 }
 createSky();
 
 // ---- Ocean ----
-const oceanGeo=new THREE.PlaneGeometry(2000,2000,40,40);
+const oceanGeo=new THREE.PlaneGeometry(30000,30000,40,40);
 const oceanMat=new THREE.MeshLambertMaterial({color:0x1a4a6a});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);
 ocean.rotation.x=-Math.PI/2;ocean.position.y=-0.5;scene.add(ocean);
@@ -414,7 +414,7 @@ function generateWave(){
   const types=['high_bombing','low_torpedo','medium_strafing','mixed'];
   const type=types[Math.floor(Math.random()*types.length)];
   const angle=pickDirection();
-  const dist=2500;
+  const dist=8000;
   // Offset the flight path so planes pass NEAR the player, not directly over
   // Random lateral offset: -300 to +300 units from center
   const passOffset=(Math.random()-0.5)*600;
@@ -927,7 +927,7 @@ function update(time){
         if(sm.userData.age>3){scene.remove(sm);p.smokeTrail.splice(si,1);}
       }
     }
-    if(p.mesh.position.length()>3000){
+    if(p.mesh.position.length()>10000){
       p.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(p.mesh);planes.splice(i,1);
     }
@@ -999,7 +999,7 @@ function update(time){
       fallingPlanes.splice(i,1);
     }
     // Remove if too far away
-    if(fp.mesh.position.length()>3000){
+    if(fp.mesh.position.length()>10000){
       fp.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(fp.mesh);
       fallingPlanes.splice(i,1);
