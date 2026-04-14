@@ -528,9 +528,10 @@ function createFlakBurst(pos){
   playShellExplode();
   const g=new THREE.Group();
   for(let i=0;i<14;i++){
-    const shade=0x1a1a1a+Math.floor(Math.random()*0x222222);
+    const grey=0x1a+Math.floor(Math.random()*0x22);
+    const shade=(grey<<16)|(grey<<8)|grey;
     const puff=new THREE.Mesh(
-      new THREE.SphereGeometry(1.5+Math.random()*3,6,6),
+      new THREE.SphereGeometry(0.8+Math.random()*1.5,6,6),
       new THREE.MeshBasicMaterial({color:shade,transparent:true,opacity:0.85})
     );
     const offset=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize().multiplyScalar(2+Math.random()*4);
@@ -539,13 +540,13 @@ function createFlakBurst(pos){
     g.add(puff);
   }
   const flash=new THREE.Mesh(
-    new THREE.SphereGeometry(1.5,6,6),
-    new THREE.MeshBasicMaterial({color:0xff6600,transparent:true,opacity:0.9})
+    new THREE.SphereGeometry(1,6,6),
+    new THREE.MeshBasicMaterial({color:0x888888,transparent:true,opacity:0.9})
   );
   flash.userData.isFlash=true;
   g.add(flash);
   g.position.copy(pos);scene.add(g);
-  const light=new THREE.PointLight(0xff6600,3,40);light.position.copy(pos);scene.add(light);
+  const light=new THREE.PointLight(0x888888,2,30);light.position.copy(pos);scene.add(light);
   flakPuffs.push({group:g,light,age:0,duration:4+Math.random()*2});
 }
 
@@ -662,7 +663,10 @@ document.addEventListener('mousemove',e=>{
   aimPitch=Math.max(.05,Math.min(1.4,aimPitch));
 });
 document.addEventListener('mousedown',e=>{
-  if(e.button===0&&gameActive){fireShell();mouseDown=true;fireTimer=0;}
+  if(e.button===0&&gameActive){
+    if(!document.pointerLockElement){try{renderer.domElement.requestPointerLock();}catch(ex){}}
+    fireShell();mouseDown=true;fireTimer=0;
+  }
 });
 document.addEventListener('mouseup',e=>{
   if(e.button===0)mouseDown=false;
