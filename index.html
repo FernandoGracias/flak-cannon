@@ -314,7 +314,7 @@ const spokeCount=12;
 for(let i=0;i<spokeCount;i++){
   const angle=(i/spokeCount)*Math.PI*2;
   const pts=[
-    new THREE.Vector3(0,sightY,sightZ),
+    new THREE.Vector3(Math.cos(angle)*0.15,sightY+Math.sin(angle)*0.15,sightZ),
     new THREE.Vector3(Math.cos(angle)*sightR,sightY+Math.sin(angle)*sightR,sightZ)
   ];
   const geo=new THREE.BufferGeometry().setFromPoints(pts);
@@ -350,7 +350,7 @@ scene.add(camera);
 let mouseDown=false,currentBarrel=0,fireTimer=0,lastFireTime=0;
 const FIRE_RATE=0.5;
 let score=0,gameActive=false;
-const shells=[],planes=[],flakPuffs=[],debris=[],fallingPlanes=[],splashes=[];
+const shells=[],planes=[],flakPuffs=[],debris=[],fallingPlanes=[],splashes=[],orphanSmoke=[];
 let aimPitch=0.3,aimYaw=0;
 const SHELL_SPEED=180,BLAST_RADIUS=18;
 const _q=new THREE.Quaternion();
@@ -905,7 +905,8 @@ function update(time){
         const vel=new THREE.Vector3((Math.random()-0.5)*20,5+Math.random()*10,(Math.random()-0.5)*20);
         scene.add(m);debris.push({mesh:m,vel,rotVel:new THREE.Vector3(Math.random()*4,Math.random()*4,Math.random()*4),age:0});
       }
-      // Leave smoke trail in the sky — it fades on its own
+      // Transfer smoke trail to orphan list so it keeps fading
+      fp.smokeTrail.forEach(s=>orphanSmoke.push(s));
       scene.remove(fp.mesh);
       fallingPlanes.splice(i,1);
     }
@@ -945,6 +946,15 @@ function update(time){
     d.mesh.rotation.z+=d.rotVel.z*dt;
     if(d.isFire)d.mesh.material.opacity=Math.max(0,1-d.age/2.5);
     if(d.mesh.position.y<0||d.age>6){scene.remove(d.mesh);debris.splice(i,1)}
+  }
+
+  // Update orphaned smoke (from crashed planes)
+  for(let i=orphanSmoke.length-1;i>=0;i--){
+    const sm=orphanSmoke[i];
+    sm.userData.age+=dt;
+    sm.material.opacity=Math.max(0,0.6-sm.userData.age*0.1);
+    sm.scale.setScalar(1+sm.userData.age*1.5);
+    if(sm.userData.age>6){scene.remove(sm);orphanSmoke.splice(i,1);}
   }
 
   // Update splashes
