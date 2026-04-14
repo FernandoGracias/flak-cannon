@@ -927,7 +927,7 @@ function update(time){
         if(sm.userData.age>3){scene.remove(sm);p.smokeTrail.splice(si,1);}
       }
     }
-    if(p.mesh.position.length()>5000){
+    if(p.mesh.position.length()>4000){
       p.smokeTrail.forEach(s=>scene.remove(s));
       scene.remove(p.mesh);planes.splice(i,1);
     }
