@@ -209,10 +209,10 @@ const shipDeckMat=new THREE.MeshLambertMaterial({color:0x606068});
 const hullShape=new THREE.Group();
 const hullMain=new THREE.Mesh(new THREE.BoxGeometry(18,6,80),shipMat);
 hullMain.position.set(0,2,0);hullShape.add(hullMain);
-// Bow taper — proper pointed bow with enough segments
-const bowGeo=new THREE.CylinderGeometry(0,9,20,12,1);
+// Bow — simple angled wedge below deck
+const bowGeo=new THREE.BoxGeometry(18,6,16);
 const bow=new THREE.Mesh(bowGeo,shipMat);
-bow.rotation.x=Math.PI/2;bow.position.set(0,2,-50);hullShape.add(bow);
+bow.position.set(0,2,-48);hullShape.add(bow);
 // Stern
 const stern=new THREE.Mesh(new THREE.BoxGeometry(18,6,4),shipMat);
 stern.position.set(0,2,42);hullShape.add(stern);
