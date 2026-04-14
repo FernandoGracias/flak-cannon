@@ -193,7 +193,7 @@ createSky();
 
 // ---- Ocean ----
 const oceanGeo=new THREE.PlaneGeometry(2000,2000,40,40);
-const oceanMat=new THREE.MeshLambertMaterial({color:0x0a2a3a});
+const oceanMat=new THREE.MeshLambertMaterial({color:0x1a4a6a});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);
 ocean.rotation.x=-Math.PI/2;ocean.position.y=-0.5;scene.add(ocean);
 
@@ -266,8 +266,8 @@ for(let i=0;i<4;i++){
   const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,8,8),barrelMat);
   tube.rotation.x=Math.PI/2;tube.position.set(0,0,-4);bGroup.add(tube);
 
-  // Flash suppressor at muzzle — opening cone (flares outward)
-  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.2,0.8,8),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
+  // Flash suppressor at muzzle — flares outward at the tip
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.35,0.8,8),new THREE.MeshLambertMaterial({color:0x3a3a3a}));
   tip.rotation.x=Math.PI/2;tip.position.set(0,0,-8.2);bGroup.add(tip);
 
   // Barrel jacket/rib section near breech — thicker, closer to gunner
@@ -290,18 +290,18 @@ for(let i=0;i<4;i++){
 const sightWireMat=new THREE.MeshBasicMaterial({color:0x222222});
 const sightLineMat=new THREE.LineBasicMaterial({color:0x222222,transparent:true,opacity:0.7});
 const sightZ=-6;
-const sightY=2.5;
+const sightY=1.2;
 const sightR=1.4; // outer ring radius
 
 // Support posts — thin triangular frame
 const postGeo=new THREE.CylinderGeometry(0.04,0.04,2,4);
 const postL=new THREE.Mesh(postGeo,sightWireMat);
-postL.position.set(-0.6,1.5,sightZ);cannonPivot.add(postL);
+postL.position.set(-0.6,0.2,sightZ);cannonPivot.add(postL);
 const postR=new THREE.Mesh(postGeo,sightWireMat);
-postR.position.set(0.6,1.5,sightZ);cannonPivot.add(postR);
+postR.position.set(0.6,0.2,sightZ);cannonPivot.add(postR);
 // Cross brace
 const brace=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,4),sightWireMat);
-brace.rotation.z=Math.PI/2;brace.position.set(0,2.0,sightZ);cannonPivot.add(brace);
+brace.rotation.z=Math.PI/2;brace.position.set(0,0.7,sightZ);cannonPivot.add(brace);
 
 // Concentric rings (outer ring + 3 inner rings)
 const ringRadii=[sightR, sightR*0.7, sightR*0.45, sightR*0.2];
@@ -378,7 +378,11 @@ function generateWave(){
   const type=types[Math.floor(Math.random()*types.length)];
   const angle=pickDirection();
   const dist=1200;
-  const baseX=Math.cos(angle)*dist, baseZ=Math.sin(angle)*dist;
+  // Offset the flight path so planes pass NEAR the player, not directly over
+  // Random lateral offset: -300 to +300 units from center
+  const passOffset=(Math.random()-0.5)*600;
+  const baseX=Math.cos(angle)*dist+Math.sin(angle)*passOffset;
+  const baseZ=Math.sin(angle)*dist-Math.cos(angle)*passOffset;
   const dx=-Math.cos(angle), dz=-Math.sin(angle);
   const perpX=-dz, perpZ=dx;
   const wave={type,planes:[]};
